@@ -268,9 +268,91 @@ Tag each question with an estimated difficulty:
 
 ## Quality Assurance Framework
 
-Quality assurance occurs at three stages. Stages 1 and 2 are mandatory and
-catch real defects. Stage 3 is a lightweight summary — useful but not worth
-agonizing over predicted statistics.
+Quality assurance occurs at four stages, numbered in execution order.
+Stages 1–3 run during content development (before document generation).
+Stage 4 runs after document generation as a blocking output gate.
+
+### Stages at a glance
+
+| Stage | When | What | Blocking? |
+|-------|------|------|-----------|
+| 1 | During content development | Per-question item-writing rules | Mandatory |
+| 2 | During content development | Substantive review (adversarial challenge, fact dependency) | Mandatory |
+| 3 | During content development | Exam-level distribution summary | Lightweight |
+| 4 | After document generation | Programmatic output validation of .docx files | **Blocking gate** |
+
+### Stage 4: Output Validation Gate (Blocking)
+
+This stage catches catastrophic defects — missing content, mismatched
+documents, broken structure — that would make the exam undeliverable.
+
+**Run the reference validation script** located at
+`~/.claude/skills/law-mcq-generator/validate_mcq.py` (CLI) or write
+and execute an equivalent script (web). Do not eyeball these checks.
+
+```
+python3 ~/.claude/skills/law-mcq-generator/validate_mcq.py \
+  path/to/exam.docx path/to/answer_key.docx
+```
+
+The script checks all of the following. Every check must PASS.
+
+**Exam document — narrative completeness:**
+- [ ] Every fact pattern has narrative text between the subtitle
+      ("The one with the...") and the first question. A fact pattern
+      with only a header and questions is a blocking failure.
+- [ ] Each narrative is between 200 and 400 words.
+
+**Exam document — question structure:**
+- [ ] Every question has exactly 5 answer choices labeled (a) through (e),
+      appearing in order immediately after the stem.
+- [ ] Question numbering is sequential (1, 2, 3, ...) with no gaps,
+      no duplicates, and the total matches the planned count.
+- [ ] Each "Questions X through Y relate to Fact Pattern [LETTER]"
+      header correctly states the question range that follows.
+- [ ] No two answer choices within the same question have identical text.
+
+**Exam document — answer choice balance:**
+- [ ] No question has a "longest answer is correct" pattern: the correct
+      answer's character count must not exceed 1.4× the median character
+      count of all five choices in the same question. If it does, lengthen
+      distractors or trim the correct answer.
+- [ ] Across the full exam, correct answer position distribution is
+      within ±2 of uniform (for 40 questions, each letter should appear
+      6–10 times).
+- [ ] Within each fact pattern cluster, correct answers use at least
+      3 different letters (for clusters of 5+ questions) or at least
+      2 different letters (for clusters of 3–4 questions).
+
+**Exam document — narrative-question coherence:**
+- [ ] Every proper noun or entity name (capitalized multi-word name like
+      "NovaDyne Robotics," "Dr. Tamura," "PathSense") that appears in a
+      question stem within a cluster also appears somewhere in the
+      cluster's narrative text or in an "Assume for purposes of this
+      question only" instruction within the cluster. A question that
+      references a character or entity not introduced in the narrative
+      is a blocking failure.
+
+**Cross-document consistency:**
+- [ ] Every question number in the exam document has a corresponding
+      "Question N" entry in the answer key document.
+- [ ] Every "Correct Answer: (X)" in the answer key names a letter
+      (a–e) that corresponds to an actual answer choice in the exam.
+- [ ] The answer key's distractor analysis for each question covers
+      exactly 4 choices (the four non-correct letters). No missing
+      entries, no extra entries.
+- [ ] Every taxonomy code in the answer key is a valid code from the
+      defined set (EA, AE, FB, FS/RI, DD, NR) or a course-preset alias.
+- [ ] Every difficulty code is valid (M, H, or VH).
+- [ ] The exam-level summary statistics (difficulty counts, position
+      counts, taxonomy counts, coverage counts) are arithmetically
+      correct — they match a fresh recount from the per-question data.
+
+**If any check fails:** fix the defect in the generation code, regenerate
+the documents, and re-run the validation script. **If the same check
+fails twice,** stop and report the systematic issue to the user — do not
+retry a third time. A repeated failure indicates a bug in the generation
+logic, not a transient error.
 
 ### Stage 1: Structural Review (Mandatory)
 
@@ -306,8 +388,12 @@ measurement error.
 - [ ] Answer choices avoid absolute terms ("always," "never") unless
       doctrinally accurate — these serve as unintended cues
 - [ ] No grammatical cues (singular/plural mismatches, article agreement)
-- [ ] No "longest answer is correct" pattern
 - [ ] No convergence cues (correct answer overlaps most with other options)
+
+Note: answer choice length balance and correct answer position distribution
+are checked programmatically by Stage 4 with defined thresholds. Do not
+duplicate those checks here — Stage 1 focuses on content-level item-writing
+rules that require human judgment.
 
 ### Stage 2: Substantive Review (Mandatory)
 
@@ -352,11 +438,12 @@ over-invest in predicted statistics — they're estimates, not measurements.
 
 - **Difficulty spread**: Count of M / H / VH questions. Flag if the mix
   is lopsided (e.g., all Hard, no Moderate).
-- **Correct answer positions**: Tally A through E. Redistribute if clustered
-  (within ±2 of expected frequency).
 - **Cognitive taxonomy distribution**: Actual vs. target percentages (±5%).
   Adjust if a category is missing entirely.
 - **Coverage balance**: Actual vs. syllabus-derived weights (±10%).
+
+Note: correct answer position distribution and answer choice length balance
+are verified programmatically by Stage 4. Do not duplicate those checks here.
 - **Adversarial challenge log**: List any questions where the challenge
   identified a close call, with the resolution.
 - **Flagged items**: Any questions with suspected non-functioning distractors
@@ -416,11 +503,12 @@ Save both files to `~/Downloads/` (CLI) or `/mnt/user-data/outputs/` (web), or t
 5. Present emphasis map to user for steering
 6. Plan narrative clusters and question allocation → present to user → get approval
 7. Generate narratives and questions
-8. **Stage 1 QA**: Structural Review — fix any violations
+8. **Stage 1 QA**: Per-Question Structural Review — fix any item-writing violations
 9. **Stage 2 QA**: Substantive Review — adversarial challenge, distractor justification, fact dependency, construct alignment
 10. **Stage 3 QA**: Exam-Level Summary — distributions, flagged items
 11. Generate both output documents
-12. Present both files to user
+12. **Stage 4 QA**: Output Validation Gate — run `validate_mcq.py` against the generated .docx files. **This is a blocking gate.** If any check fails, fix and regenerate. If the same check fails twice, stop and report the issue to the user.
+13. Present both files to user
 
 ## What NOT to Do
 
@@ -434,3 +522,8 @@ Save both files to `~/Downloads/` (CLI) or `/mnt/user-data/outputs/` (web), or t
 - Do not make all questions the same difficulty
 - Do not cluster correct answers at one letter position
 - Do not skip Stages 1 and 2 of the QA framework
+- **Do not deliver documents that have not passed Stage 4 validation.** Stage 4
+  is a blocking gate. If the validation script reports any failure, fix the
+  defect and re-run validation before presenting files to the user. A missing
+  narrative, a missing answer choice, or a mismatched answer key is a
+  catastrophic defect — treat it as one.
