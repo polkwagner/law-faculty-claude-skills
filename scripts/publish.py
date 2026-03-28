@@ -29,7 +29,10 @@ SKILL_MAP = {
 }
 
 # Skills that should NOT appear in output (safety check)
-EXCLUDED_SKILLS = {"send-to-email", "ip-problems", "class-prep-skill"}
+EXCLUDED_SKILLS = {"send-to-email"}
+
+# Skills maintained directly in the repo (not synced from source)
+MANUAL_SKILLS = {"law-class-problems", "law-class-prep"}
 
 # Files to skip during copy
 SKIP_FILES = {".DS_Store", "design.md"}

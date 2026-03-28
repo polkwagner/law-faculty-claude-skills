@@ -16,10 +16,10 @@ skill-name/
   *.docx            # Sample output files (optional)
 ```
 
-Published skills (9):
+Published skills (11):
 
 - **Assessment**: `law-mcq-generator`, `law-essay-generator`
-- **Course Prep**: `lecture-slide-reviewer`
+- **Course Prep**: `law-class-problems`, `law-class-prep`, `lecture-slide-reviewer`
 - **Documents**: `law-memo`, `law-document`, `law-email-style`
 - **Document Processing**: `md-to-pdf`, `docx-comment-summary`
 - **Review**: `rex`
@@ -78,7 +78,7 @@ Skills producing Word documents share these conventions:
 
 ### Course Material Discovery
 
-Pedagogical skills (lecture-slide-reviewer, MCQ, essay) share a "First Steps" pattern:
+Pedagogical skills (class-problems, class-prep, lecture-slide-reviewer, MCQ, essay) share a "First Steps" pattern:
 1. Get course materials path from user
 2. Read the syllabus
 3. Check for existing resources
@@ -95,8 +95,9 @@ All enforce construct alignment: every tested issue must trace to assigned readi
 
 ## When Editing Skills
 
-- Edit the source skills in `~/.claude/skills/`, then re-run `scripts/publish.py`
-- Never edit published skill files directly in this repo — they'll be overwritten on next publish
+- For most skills: edit the source in `~/.claude/skills/`, then re-run `scripts/publish.py`
+- `law-class-problems` and `law-class-prep` are maintained directly in the repo (not synced)
+- Never edit other published skill files directly — they'll be overwritten on next publish
 - Test dual-environment path resolution when adding asset references
 - Maintain the YAML frontmatter `description` field with accurate trigger phrases
 - MCQ and essay skills use course presets; add new presets for additional courses

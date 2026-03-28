@@ -28,6 +28,8 @@ Before installing skills, you need:
 |---|---|---|
 | **law-mcq-generator** | Generate multiple-choice exam questions for any law course, grounded in psychometric research | python-docx |
 | **law-essay-generator** | Generate essay exam questions with SOLO taxonomy layering and rubrics | python-docx |
+| **law-class-problems** | Create and revise adversarial in-class problems for any law course | None |
+| **law-class-prep** | Full class prep: slide alignment, problem review, and lecture guide | python-docx |
 | **lecture-slide-reviewer** | Review lecture slides against assigned readings for coverage and pacing | None |
 | **law-memo** | Produce formatted .docx memos with Penn Carey Law letterhead | python-docx |
 | **law-document** | Produce formatted .docx proposals, reports, and briefing documents | python-docx |
@@ -85,6 +87,8 @@ Skills are markdown instruction files that Claude Code reads when triggered. You
 - *"Write a memo to the faculty about the new grading policy"* → triggers law-memo
 - *"Generate 20 multiple choice questions covering chapters 3-5"* → triggers law-mcq-generator
 - *"Review my slides for Tuesday's class"* → triggers lecture-slide-reviewer
+- *"Create a class problem for session 12"* → triggers law-class-problems
+- *"Prep class 8"* → triggers law-class-prep
 
 Each skill's SKILL.md file contains the full reference for what it does and how to use it.
 

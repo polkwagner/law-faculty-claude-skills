@@ -2,3 +2,12 @@ docs/
 .DS_Store
 __pycache__/
 *.pyc
+
+# Source skills not in the public release
+polk-memo/
+polk-document/
+polk-email-style/
+send-to-email/
+ip-problems/
+class-prep-skill/
+law-essay-generator/design.md
