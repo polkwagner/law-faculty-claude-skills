@@ -31,8 +31,8 @@ SKILL_MAP = {
 # Skills that should NOT appear in output (safety check)
 EXCLUDED_SKILLS = {"send-to-email"}
 
-# Skills maintained directly in the repo (not synced from source)
-MANUAL_SKILLS = {"law-class-problems", "law-class-prep"}
+# law-class-problems and law-class-prep are maintained directly in the repo,
+# not synced from source. They are not in SKILL_MAP so they won't be touched.
 
 # Files to skip during copy
 SKIP_FILES = {".DS_Store", "design.md"}
@@ -92,7 +92,9 @@ SCRUB_RULES = [
     (r"on Polk's behalf", "on the user's behalf"),
     (r'Just "Polk" on its own line', 'Just your first name on its own line'),
 
-    # --- Directory name cross-references (broadest — last) ---
+    # --- Directory/skill name cross-references (broadest — last) ---
+    (r"ip-problems", "law-class-problems"),
+    (r"class-prep-skill", "law-class-prep"),
     (r"polk-document", "law-document"),
     (r"polk-memo", "law-memo"),
     (r"polk-email-style", "law-email-style"),
