@@ -458,18 +458,27 @@ def check_position_distribution(questions, answers, fact_patterns):
     return issues
 
 
+def normalize_quotes(text):
+    """Replace smart quotes and curly quotes with straight equivalents."""
+    text = text.replace('\u2018', "'").replace('\u2019', "'")  # single smart quotes
+    text = text.replace('\u201C', '"').replace('\u201D', '"')  # double smart quotes
+    text = text.replace('\u2013', '-').replace('\u2014', '--')  # en/em dashes
+    return text
+
+
 def strip_legal_references(text):
     """
     Remove case citations, statute references, and legal authority names from text
     so that proper noun extraction focuses on fact-pattern entities only.
     """
+    text = normalize_quotes(text)
     # Remove case citations: "X v. Y" patterns (including trailing "Inc.", "Ltd.", etc.)
     # e.g., "Graham v. John Deere", "Campbell v. Acuff-Rose Music, Inc."
     # Also handles "MGM Studios, Inc. v. Grokster, Ltd."
     text = re.sub(
         r'(?:[A-Z][A-Za-z\.\',\- ]*?\s+v\.\s+[A-Z][A-Za-z\.\',\- ]*?'
         r'(?:,?\s*(?:Inc|Ltd|Corp|Co|LLC|LP|LLP)\.?)?)'
-        r'(?=[\.,;\)\s]|$)',
+        r'(?=[\.,;\)\s\?!:]|$)',
         ' ', text
     )
 
@@ -555,9 +564,10 @@ def extract_factual_entities(text):
     }
 
     # Multi-word proper nouns (e.g., "NovaDyne Robotics", "Dr. Tamura")
+    # Note: single quotes are used as word boundaries, not part of names
     multi_word_re = re.compile(
         r'\b((?:(?:Dr|Mr|Ms|Mrs|Prof)\.\s+)?'
-        r'(?:[A-Z][a-zA-Z\u2019\']+(?:\s+(?:of|the|and|for|de|la|le|&)\s+)?){2,}'
+        r'(?:[A-Z][a-zA-Z]+(?:\s+(?:of|the|and|for|de|la|le|&)\s+)?){2,}'
         r'(?:(?:Inc|Corp|Co|Ltd|LLC|LP|LLP|Jr|Sr|II|III|IV)\b\.?)?)'
     )
     for m in multi_word_re.finditer(text):
@@ -636,8 +646,21 @@ def check_narrative_coherence(fact_patterns, questions, answers):
             )
             assume_text = assume_match.group(1) if assume_match else ''
 
+            # Entities that are introduced by the question stem itself
+            # (in quotes, or after "a ___" / "the ___" introductory phrases)
+            # are self-contained and don't need to appear in the narrative.
+            # We detect this by checking if the entity appears in quotes.
+            norm_stem = normalize_quotes(stem)
+            quoted_entities = set()
+            for qm in re.finditer(r"['\"]([^'\"]+)['\"]", norm_stem):
+                quoted_entities.add(qm.group(1).strip().upper())
+
             for entity in stem_entities:
                 entity_lower = entity.lower()
+
+                # Skip entities introduced by the question itself (in quotes)
+                if entity.upper() in quoted_entities:
+                    continue
 
                 # Check in narrative text (substring match)
                 if entity_lower in narrative_lower:

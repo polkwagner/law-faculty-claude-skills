@@ -281,79 +281,6 @@ Stage 4 runs after document generation as a blocking output gate.
 | 3 | During content development | Exam-level distribution summary | Lightweight |
 | 4 | After document generation | Programmatic output validation of .docx files | **Blocking gate** |
 
-### Stage 4: Output Validation Gate (Blocking)
-
-This stage catches catastrophic defects — missing content, mismatched
-documents, broken structure — that would make the exam undeliverable.
-
-**Run the reference validation script** located at
-`~/.claude/skills/law-mcq-generator/validate_mcq.py` (CLI) or write
-and execute an equivalent script (web). Do not eyeball these checks.
-
-```
-python3 ~/.claude/skills/law-mcq-generator/validate_mcq.py \
-  path/to/exam.docx path/to/answer_key.docx
-```
-
-The script checks all of the following. Every check must PASS.
-
-**Exam document — narrative completeness:**
-- [ ] Every fact pattern has narrative text between the subtitle
-      ("The one with the...") and the first question. A fact pattern
-      with only a header and questions is a blocking failure.
-- [ ] Each narrative is between 200 and 400 words.
-
-**Exam document — question structure:**
-- [ ] Every question has exactly 5 answer choices labeled (a) through (e),
-      appearing in order immediately after the stem.
-- [ ] Question numbering is sequential (1, 2, 3, ...) with no gaps,
-      no duplicates, and the total matches the planned count.
-- [ ] Each "Questions X through Y relate to Fact Pattern [LETTER]"
-      header correctly states the question range that follows.
-- [ ] No two answer choices within the same question have identical text.
-
-**Exam document — answer choice balance:**
-- [ ] No question has a "longest answer is correct" pattern: the correct
-      answer's character count must not exceed 1.4× the median character
-      count of all five choices in the same question. If it does, lengthen
-      distractors or trim the correct answer.
-- [ ] Across the full exam, correct answer position distribution is
-      within ±2 of uniform (for 40 questions, each letter should appear
-      6–10 times).
-- [ ] Within each fact pattern cluster, correct answers use at least
-      3 different letters (for clusters of 5+ questions) or at least
-      2 different letters (for clusters of 3–4 questions).
-
-**Exam document — narrative-question coherence:**
-- [ ] Every proper noun or entity name (capitalized multi-word name like
-      "NovaDyne Robotics," "Dr. Tamura," "PathSense") that appears in a
-      question stem within a cluster also appears somewhere in the
-      cluster's narrative text or in an "Assume for purposes of this
-      question only" instruction within the cluster. A question that
-      references a character or entity not introduced in the narrative
-      is a blocking failure.
-
-**Cross-document consistency:**
-- [ ] Every question number in the exam document has a corresponding
-      "Question N" entry in the answer key document.
-- [ ] Every "Correct Answer: (X)" in the answer key names a letter
-      (a–e) that corresponds to an actual answer choice in the exam.
-- [ ] The answer key's distractor analysis for each question covers
-      exactly 4 choices (the four non-correct letters). No missing
-      entries, no extra entries.
-- [ ] Every taxonomy code in the answer key is a valid code from the
-      defined set (EA, AE, FB, FS/RI, DD, NR) or a course-preset alias.
-- [ ] Every difficulty code is valid (M, H, or VH).
-- [ ] The exam-level summary statistics (difficulty counts, position
-      counts, taxonomy counts, coverage counts) are arithmetically
-      correct — they match a fresh recount from the per-question data.
-
-**If any check fails:** fix the defect in the generation code, regenerate
-the documents, and re-run the validation script. **If the same check
-fails twice,** stop and report the systematic issue to the user — do not
-retry a third time. A repeated failure indicates a bug in the generation
-logic, not a transient error.
-
 ### Stage 1: Structural Review (Mandatory)
 
 Check every question against these item-writing rules (Haladyna-Downing-Rodriguez).
@@ -429,7 +356,7 @@ These tests catch genuinely flawed questions. Do not skip them.
   revise or flag for the professor.
 - Questions testing HIGH-emphasis doctrines (in readings + on slides + in
   problems + in transcripts) should outnumber questions testing MEDIUM
-  doctrines. The emphasis map from Step 4 guides this balance.
+  doctrines. The emphasis map built in workflow step 4 guides this balance.
 
 ### Stage 3: Exam-Level Summary (Lightweight)
 
@@ -441,13 +368,86 @@ over-invest in predicted statistics — they're estimates, not measurements.
 - **Cognitive taxonomy distribution**: Actual vs. target percentages (±5%).
   Adjust if a category is missing entirely.
 - **Coverage balance**: Actual vs. syllabus-derived weights (±10%).
-
-Note: correct answer position distribution and answer choice length balance
-are verified programmatically by Stage 4. Do not duplicate those checks here.
 - **Adversarial challenge log**: List any questions where the challenge
   identified a close call, with the resolution.
 - **Flagged items**: Any questions with suspected non-functioning distractors
   or structural concerns surviving Stage 1.
+
+Note: correct answer position distribution and answer choice length balance
+are verified programmatically by Stage 4. Do not duplicate those checks here.
+
+### Stage 4: Output Validation Gate (Blocking)
+
+This stage catches catastrophic defects — missing content, mismatched
+documents, broken structure — that would make the exam undeliverable.
+
+**Run the reference validation script** located at
+`~/.claude/skills/law-mcq-generator/validate_mcq.py` (CLI) or write
+and execute an equivalent script (web). Do not eyeball these checks.
+
+```
+python3 ~/.claude/skills/law-mcq-generator/validate_mcq.py \
+  path/to/exam.docx path/to/answer_key.docx
+```
+
+The script checks all of the following. Every check must PASS.
+
+**Exam document — narrative completeness:**
+- [ ] Every fact pattern has narrative text between the subtitle
+      ("The one with the...") and the first question. A fact pattern
+      with only a header and questions is a blocking failure.
+- [ ] Each narrative is between 200 and 400 words.
+
+**Exam document — question structure:**
+- [ ] Every question has exactly 5 answer choices labeled (a) through (e),
+      appearing in order immediately after the stem.
+- [ ] Question numbering is sequential (1, 2, 3, ...) with no gaps,
+      no duplicates, and the total matches the planned count.
+- [ ] Each "Questions X through Y relate to Fact Pattern [LETTER]"
+      header correctly states the question range that follows.
+- [ ] No two answer choices within the same question have identical text.
+
+**Exam document — answer choice balance:**
+- [ ] No question has a "longest answer is correct" pattern: the correct
+      answer's character count must not exceed 1.4× the median character
+      count of all five choices in the same question. If it does, lengthen
+      distractors or trim the correct answer.
+- [ ] Across the full exam, correct answer position distribution is
+      within ±2 of uniform (for 40 questions, each letter should appear
+      6–10 times).
+- [ ] Within each fact pattern cluster, correct answers use at least
+      3 different letters (for clusters of 5+ questions) or at least
+      2 different letters (for clusters of 3–4 questions).
+
+**Exam document — narrative-question coherence:**
+- [ ] Every proper noun or entity name (capitalized multi-word name like
+      "NovaDyne Robotics," "Dr. Tamura," "PathSense") that appears in a
+      question stem within a cluster also appears somewhere in the
+      cluster's narrative text or in an "Assume for purposes of this
+      question only" instruction within the cluster. A question that
+      references a character or entity not introduced in the narrative
+      is a blocking failure.
+
+**Cross-document consistency:**
+- [ ] Every question number in the exam document has a corresponding
+      "Question N" entry in the answer key document.
+- [ ] Every "Correct Answer: (X)" in the answer key names a letter
+      (a–e) that corresponds to an actual answer choice in the exam.
+- [ ] The answer key's distractor analysis for each question covers
+      exactly 4 choices (the four non-correct letters). No missing
+      entries, no extra entries.
+- [ ] Every taxonomy code in the answer key is a valid code from the
+      defined set (EA, AE, FB, FS/RI, DD, NR) or a course-preset alias.
+- [ ] Every difficulty code is valid (M, H, or VH).
+- [ ] The exam-level summary statistics (difficulty counts, position
+      counts, taxonomy counts, coverage counts) are arithmetically
+      correct — they match a fresh recount from the per-question data.
+
+**If any check fails:** fix the defect in the generation code, regenerate
+the documents, and re-run the validation script. **If the same check
+fails twice,** stop and report the systematic issue to the user — do not
+retry a third time. A repeated failure indicates a bug in the generation
+logic, not a transient error.
 
 ## Output
 
