@@ -40,17 +40,15 @@ Before installing skills, you need:
 
 ### Option A: Install from GitHub (recommended)
 
-<!-- TODO: Replace OWNER/REPO_NAME with actual GitHub path before publishing -->
-
 Install individual skills directly in Claude Code:
 
 ```
-/install-skill https://github.com/OWNER/REPO_NAME/tree/main/SKILL_NAME
+/install-skill https://github.com/polkwagner/law-faculty-claude-skills/tree/main/SKILL_NAME
 ```
 
 For example, to install the MCQ generator:
 ```
-/install-skill https://github.com/OWNER/REPO_NAME/tree/main/law-mcq-generator
+/install-skill https://github.com/polkwagner/law-faculty-claude-skills/tree/main/law-mcq-generator
 ```
 
 ### Option B: Manual installation
