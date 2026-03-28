@@ -51,8 +51,8 @@ pdfmetrics.registerFont(TTFont('Cambria', '/path/to/cambria.ttc'))
 
 The Penn Carey Law logo with white background (no compositing needed):
 
-**Path:** `~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (CLI)
-or `/mnt/skills/user/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (web).
+**Path:** `~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (CLI)
+or `/mnt/skills/user/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (web).
 Try CLI path first; if not found, try web path.
 
 If neither path works, stop and tell the user — do not produce a PDF without it.
@@ -64,8 +64,8 @@ Height = 3.2 / 5.587 = 0.573 inches.
 import os
 # Try CLI path first, then web path
 for _p in [
-    os.path.expanduser("~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
-    "/mnt/skills/user/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
+    os.path.expanduser("~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
+    "/mnt/skills/user/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
 ]:
     if os.path.exists(_p):
         LOGO_PATH = _p
@@ -139,8 +139,8 @@ CONTENT_W = PAGE_W - L_MARGIN - R_MARGIN
 # --- Logo ---
 # Try CLI path first, then web path
 for _p in [
-    os.path.expanduser("~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
-    "/mnt/skills/user/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
+    os.path.expanduser("~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
+    "/mnt/skills/user/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
 ]:
     if os.path.exists(_p):
         LOGO_PATH = _p
@@ -520,7 +520,7 @@ def parse_md_to_flowables(md_text):
 1. **Get the markdown**: Read from file path or conversation content.
 
 2. **Verify the logo exists** at
-   `~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png`.
+   `~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png`.
    If missing, stop and tell the user.
 
 3. **Determine title metadata**: Extract from the first H1 in the markdown,

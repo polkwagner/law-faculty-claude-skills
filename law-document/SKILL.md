@@ -1,9 +1,9 @@
 ---
-name: polk-document
-description: "Draft and produce formatted Word document (.docx) general documents - proposals, reports, briefing docs, white papers, and other formal written materials - in Polk Wagner Penn Carey Law style. Use this skill whenever Polk asks to write, draft, or create a document that is not a memo or email: proposals, policy documents, reports, briefing materials, white papers, or any substantive standalone written work. Trigger phrases include write a proposal, draft a document, create a report, briefing doc, policy document, white paper, or any request to produce a formal standalone document. Use the polk-memo skill instead for memos specifically."
+name: law-document
+description: "Draft and produce formatted Word document (.docx) general documents - proposals, reports, briefing docs, white papers, and other formal written materials - in Penn Carey Law style. Use this skill whenever the user asks to write, draft, or create a document that is not a memo or email: proposals, policy documents, reports, briefing materials, white papers, or any substantive standalone written work. Trigger phrases include write a proposal, draft a document, create a report, briefing doc, policy document, white paper, or any request to produce a formal standalone document. Use the law-memo skill instead for memos specifically."
 ---
 
-# Polk Wagner Document Skill
+# Law Document Skill
 
 Produces professional Penn Carey Law documents as `.docx` files — proposals, reports, briefing docs, and similar materials. Shares formatting conventions with the memo skill (Cambria, 1" margins) but uses document-appropriate structure rather than the memo header block.
 
@@ -28,8 +28,8 @@ This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whi
 
 Every document begins with the Penn Carey Law logo centered in the title block. This is the first step of file production, not a checklist item.
 
-**Path:** `~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (CLI)
-or `/mnt/skills/user/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (web).
+**Path:** `~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (CLI)
+or `/mnt/skills/user/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` (web).
 Try CLI path first; if not found, try web path.
 
 If neither path works, **stop and tell the user** — do not produce a document without it.
@@ -45,8 +45,8 @@ from docx.shared import Emu
 
 # Try CLI path first, then web path
 for p in [
-    os.path.expanduser("~/.claude/skills/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
-    "/mnt/skills/user/polk-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
+    os.path.expanduser("~/.claude/skills/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png"),
+    "/mnt/skills/user/law-document/assets/PennCareyLaw_UPenn_Blue-WhiteBkrnd.png",
 ]:
     if os.path.exists(p):
         LOGO_PATH = p

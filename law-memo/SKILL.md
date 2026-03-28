@@ -1,9 +1,9 @@
 ---
-name: polk-memo
-description: Draft and produce formatted Word document (.docx) memos in Polk Wagner's Penn Carey Law style. Use this skill whenever Polk asks to write, draft, or create a memo, memorandum, or formal internal document for faculty, committees, or the Dean's office. Trigger phrases include "write a memo", "draft a memo", "memo to faculty", "memo to EPC", "memorandum", or any request to produce a formal internal communication as a document. Always use this skill — do not attempt to format or draft memos freehand without consulting it first.
+name: law-memo
+description: Draft and produce formatted Word document (.docx) memos in Penn Carey Law style. Use this skill whenever the user asks to write, draft, or create a memo, memorandum, or formal internal document for faculty, committees, or the Dean's office. Trigger phrases include "write a memo", "draft a memo", "memo to faculty", "memo to EPC", "memorandum", or any request to produce a formal internal communication as a document. Always use this skill — do not attempt to format or draft memos freehand without consulting it first.
 ---
 
-# Polk Wagner Memo Skill
+# Law Memo Skill
 
 Produces fully formatted Penn Carey Law memos as `.docx` files, matching Polk's established style: Penn Carey Law letterhead, standard header block, Cambria body text. Voice baseline (tone, banned phrases, preferred expressions) is defined in CLAUDE.md — that always applies. This skill adds memo-specific formatting and structure.
 
@@ -20,8 +20,8 @@ This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whi
 
 ## Before Drafting
 
-1. If a sample memo exists at `~/.claude/skills/polk-memo/polk-memo_sample.docx` (CLI) or `/mnt/skills/user/polk-memo/polk-memo_sample.docx` (web), clone it as the base for exact formatting
-2. Clarify with Polk if needed: recipient, subject/RE line, key points to cover, any attachments or action items
+1. If a sample memo exists at `~/.claude/skills/law-memo/law-memo_sample.docx` (CLI) or `/mnt/skills/user/law-memo/law-memo_sample.docx` (web), clone it as the base for exact formatting
+2. Clarify with the user if needed: recipient, subject/RE line, key points to cover, any attachments or action items
 
 ---
 
@@ -34,7 +34,7 @@ This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whi
 
 ### Logo
 - Centered paragraph, `w:after="200"`
-- Image: `PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` from `~/.claude/skills/polk-memo/assets/` (CLI) or `/mnt/skills/user/polk-memo/assets/` (web)
+- Image: `PennCareyLaw_UPenn_Blue-WhiteBkrnd.png` from `~/.claude/skills/law-memo/assets/` (CLI) or `/mnt/skills/user/law-memo/assets/` (web)
 - EMU dimensions: `cx="2628900" cy="476250"` (matches sample exactly)
 - **ALWAYS include the logo. This is mandatory.**
 
@@ -44,7 +44,7 @@ This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whi
 ### Header Block
 ```
 TO:     [Recipient]
-FROM:   Polk Wagner, Deputy Dean for Academic Affairs and Innovation
+FROM:   [Your Name], [Your Title]
 DATE:   [Full date — e.g. March 11, 2026. Always use the actual current date, never just month/year.]
 RE:     [Subject — bold]
 ```
@@ -111,7 +111,7 @@ Memos layer these conventions on top of the CLAUDE.md voice baseline:
 - No personal sign-off; memo ends with the action/next-steps paragraph
 - Collegial but authoritative — writes as a peer who has done the work and is sharing conclusions
 
-**FROM line**: Always "Polk Wagner, Deputy Dean for Academic Affairs and Innovation" unless context clearly calls for a different title.
+**FROM line**: Always "[Your Name], [Your Title]" unless context clearly calls for a different title.
 
 ---
 

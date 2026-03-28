@@ -1,13 +1,13 @@
 ---
-name: polk-email-style
+name: law-email-style
 description: >
-  Draft emails, memos, and messages in Polk Wagner's voice. Use when asked to draft, write,
+  Draft emails, memos, and messages in your voice. Use when asked to draft, write,
   or compose any email or professional communication for Polk. Trigger phrases include
   "draft an email", "write a reply", "compose a message", "draft a decline", "write to",
-  "email about", or any request to produce written communication on Polk's behalf.
+  "email about", or any request to produce written communication on the user's behalf.
 ---
 
-# Polk Wagner Email Style Guide
+# Law Email Style Guide
 
 Use this guide for email-specific formatting. Voice, tone, banned phrases, and preferred expressions are defined in the **Writing & Tone** section of CLAUDE.md — that baseline always applies. This skill adds email-specific structure on top.
 
@@ -17,11 +17,11 @@ Match the audience and formality:
 - **Faculty-wide:** "Dear Colleagues," or "Dear Colleagues and Friends -"
 - **Individual, semi-formal:** "Dear [First Name]," or "Hi [First Name] -"
 - **Casual / internal:** "Good morning -" or just dive in with no greeting
-- **Note:** Polk often uses a hyphen after greetings rather than a comma
+- **Note:** The default style uses a hyphen after greetings rather than a comma
 
 ## Sign-Off
 
-- **Default:** Just "Polk" on its own line. No title, no phone number.
+- **Default:** Just your first name on its own line. No title, no phone number.
 - **More formal / external:** "Best,\n\nPolk"
 - **Never:** "Sincerely," "Regards," "Warm regards," "Cheers," "All the best,"
 - May include a warm closing line before the sign-off when the tone fits: "I look forward to seeing you in the halls next week." or "Let me know how I can help!"

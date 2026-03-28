@@ -49,10 +49,11 @@ If the user's course isn't in the preset list, fall through to the standard
 |---|---|
 | **Course name** | Intellectual Property |
 | **School** | University of Pennsylvania Carey Law School |
-| **Professor** | Polk Wagner |
+| **Professor** | [Your Name] |
 | **Casebook** | IPNTA |
 | **Materials path** | Ask user — e.g., `~/path/to/IP/course-materials/` |
 | **Doctrinal areas** | Trade Secret, Patent, Copyright, Trademark, Right of Publicity |
+| **Coverage weight note** | Patent, Copyright, and Trademark are the "big three" — they should receive the most questions. Trade Secret and Right of Publicity are also studied but are minor doctrines relative to the big three. |
 | **Cognitive taxonomy note** | Use "RI" (Regime Identification) instead of "FS" — "Which IP regime applies or best protects" |
 
 To add a new preset: add a column to this table with the course's defaults.
@@ -63,7 +64,9 @@ Fields left blank fall through to the standard discovery flow (read syllabus).
 1. **Identify the course.** Check if it matches a preset. If so, load defaults
    and confirm with the user. If not, ask for:
    - The path to the folder containing the course materials (syllabus, readings,
-     class notes, slides, past exams — whatever is available)
+     slides, class problems, transcripts, problem debriefs — whatever is
+     available). The folder may contain all materials in one place or organized
+     in subfolders.
    - How many questions to generate
    - Any specific preferences or constraints (e.g., "focus on the second half
      of the course," "no questions on [topic]," "match the style of my 2024 exam")
@@ -83,11 +86,50 @@ Fields left blank fall through to the standard discovery flow (read syllabus).
    for question distribution. Round to whole questions. Present the planned
    distribution to the user and ask if they want to adjust it.
 
-4. **Read the course materials** for each doctrinal area. These are the
-   substantive foundation — questions must be closely tied to concepts, rules,
-   tests, and cases from the materials. You do not need to read every document
-   in full, but you must read enough to understand the key doctrines, cases,
-   and analytical frameworks covered in each area.
+4. **Read the course materials** and build the emphasis map. Not all material
+   types will be available for every course — use whatever is provided. The
+   course materials folder may contain any combination of the following,
+   listed in order of their role:
+
+   **Primary source (defines what can be tested):**
+   - **Assigned readings** (PDF or markdown) — the ultimate source of course
+     coverage. These define the "testable universe." If a doctrine, case, or
+     framework is not in the assigned readings, it cannot be tested on the
+     exam. Every question must trace to a specific reading.
+
+   **Emphasis signals (determine what SHOULD be tested):**
+   - **Slide decks** (PDFs) — the primary emphasis signal. Topics that made
+     it onto slides received deliberate instructional emphasis and should be
+     weighted higher when selecting which doctrines to test. Slides may also
+     contain some substantive material not fully covered in the readings —
+     this material is testable.
+   - **Class transcripts** (markdown) — a supporting emphasis signal that
+     reinforces the slides. Scan for extended discussions, repeated returns
+     to a topic, and Socratic exchanges. Time-on-topic proxies importance.
+     **Practical note:** read transcripts only for class sessions whose
+     doctrines are candidates for questions, not the entire course.
+   - **Class problems** (markdown or Google Docs) — provide context about
+     which topics were emphasized through adversarial practice. MCQs can
+     test these doctrines at a different cognitive level but should not
+     simply repeat what the problem already tested.
+   - **Problem debriefs** (markdown) — reveal which arguments the professor
+     considered strongest and what common student errors looked like.
+
+   Rank all testable doctrines by emphasis level. When fewer material types
+   are available, use whatever is provided — the ranking degrades gracefully:
+
+   | Level | Criteria | MCQ Role |
+   |---|---|---|
+   | **High** | In readings + emphasized on slides + reinforced by transcript or class problem | Strong candidate for a question |
+   | **Medium-High** | In readings + on slides but no problem or transcript signal | Good candidate — taught but not yet practiced |
+   | **Medium** | In readings only (or on slides only for substantive slide-only material) | Fair game but should not dominate the exam |
+   | **Excluded** | Not in readings and not substantively on slides | Cannot be tested |
+
+   If only readings are available (no slides, transcripts, or problems),
+   all doctrines rank MEDIUM and selection is based on coverage weight and
+   the depth of treatment in the readings.
+
+   Present this emphasis ranking to the user before planning narrative clusters.
 
 5. **Plan the narrative clusters.** Determine how many fact patterns are needed
    and which doctrinal areas each will cover. Each narrative should span at
@@ -293,11 +335,15 @@ These tests catch genuinely flawed questions. Do not skip them.
   can answer correctly without the narrative, the question is testing
   general knowledge, not application. Revise.
 
-**Course material alignment test:**
-- For each question, identify the specific doctrine, rule, test, or case
-  from the course materials that the question requires the student to know.
-  If the question requires knowledge not in the assigned materials, revise
-  or flag for the professor.
+**Course material alignment test (construct alignment):**
+- For each question, trace the tested doctrine back to a specific source
+  in the course materials: reading assignment (with page range or section),
+  slide deck (with topic), and transcript emphasis (if available).
+- If the question requires knowledge not found in any assigned material,
+  revise or flag for the professor.
+- Questions testing HIGH-emphasis doctrines (in readings + on slides + in
+  problems + in transcripts) should outnumber questions testing MEDIUM
+  doctrines. The emphasis map from Step 4 guides this balance.
 
 ### Stage 3: Exam-Level Summary (Lightweight)
 
@@ -348,6 +394,8 @@ Both documents should use consistent Penn Law formatting:
 
 Per-question analysis including:
 - Question number and correct answer
+- **Course material source** (specific reading assignment, slide topic, and
+  transcript emphasis where available — construct alignment trace)
 - Cognitive taxonomy code (EA/AE/FB/FS/DD/NR or preset labels)
 - Difficulty estimate (M/H/VH)
 - Doctrinal basis (specific rule, test, or case from course materials)
@@ -364,14 +412,15 @@ Save both files to `~/Downloads/` (CLI) or `/mnt/user-data/outputs/` (web), or t
 1. Identify course (check presets) → confirm with user
 2. Ask for question count, materials path (if not preset), and any preferences
 3. Read syllabus → extract course metadata → calculate coverage distribution → present to user
-4. Read relevant course materials for each doctrinal area
-5. Plan narrative clusters and question allocation → present to user
-6. Generate narratives and questions
-7. **Stage 1 QA**: Structural Review — fix any violations
-8. **Stage 2 QA**: Substantive Review — adversarial challenge, distractor justification, fact dependency
-9. **Stage 3 QA**: Exam-Level Summary — distributions, flagged items
-10. Generate both output documents
-11. Present both files to user
+4. Read course materials (readings, slides, transcripts, problems, debriefs) → build emphasis map
+5. Present emphasis map to user for steering
+6. Plan narrative clusters and question allocation → present to user → get approval
+7. Generate narratives and questions
+8. **Stage 1 QA**: Structural Review — fix any violations
+9. **Stage 2 QA**: Substantive Review — adversarial challenge, distractor justification, fact dependency, construct alignment
+10. **Stage 3 QA**: Exam-Level Summary — distributions, flagged items
+11. Generate both output documents
+12. Present both files to user
 
 ## What NOT to Do
 
