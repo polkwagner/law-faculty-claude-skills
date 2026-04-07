@@ -1,22 +1,27 @@
 # AI Skills for Penn Carey Law Faculty
 
-A collection of AI coding assistant skills for teaching, document production, and course preparation at Penn Carey Law. All skills conform to the [agentskills specification](https://github.com/agentskills/agentskills), so they work with any compatible tool — including [Claude Code](https://claude.ai/code), Gemini CLI, and others. Pick the ones useful to you.
+A collection of skills for AI coding assistants — built for teaching, document production, and course preparation at Penn Carey Law.
 
-## Prerequisites
+Every skill in this repository conforms to the **[agentskills specification](https://github.com/agentskills/agentskills)**, a cross-tool standard for AI assistant skills. That means they work with any compatible tool, not just one vendor. Currently supported tools include [Claude Code](https://claude.ai/code), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [ChatGPT](https://chatgpt.com) (including ChatGPT EDU), and any other tool that reads the agentskills format. Pick the skills useful to you.
 
-Before installing skills, you need:
+## What Are Agentskills?
 
-1. **An agentskills-compatible AI tool** — such as [Claude Code](https://claude.ai/code), Gemini CLI, or any tool that supports the [agentskills specification](https://github.com/agentskills/agentskills).
+Each skill is a directory containing a **SKILL.md** file — a markdown document with YAML frontmatter that tells the AI assistant what the skill does and how to execute it. The [agentskills specification](https://github.com/agentskills/agentskills) defines the format so that any compatible tool can discover and use skills without vendor-specific configuration.
 
-2. **Python 3** (for document-producing skills):
-   ```bash
-   pip install python-docx reportlab
-   ```
+```
+law-mcq-generator/
+  SKILL.md          ← skill definition (YAML frontmatter + instructions)
+  assets/           ← images, logos (optional)
+  scripts/          ← helper scripts (optional)
+```
 
-3. **Pandoc** (for some document conversions):
-   ```bash
-   brew install pandoc
-   ```
+Skills are invoked naturally in conversation — you don't need special syntax:
+
+- *"Write a memo to the faculty about the new grading policy"* → triggers law-memo
+- *"Generate 20 multiple choice questions covering chapters 3-5"* → triggers law-mcq-generator
+- *"Review my slides for Tuesday's class"* → triggers lecture-slide-reviewer
+- *"Create a class problem for session 12"* → triggers law-class-problems
+- *"Prep class 8"* → triggers law-class-prep
 
 ## Available Skills
 
@@ -35,30 +40,72 @@ Before installing skills, you need:
 | **rex** | Critical review of code, plans, or designs | None |
 | **eddie** | Senior-level editorial review of any document — checks factual accuracy, citations, internal consistency, institutional sensitivity, voice/style, and AI failure modes | None |
 
+Each skill's SKILL.md file contains the full reference for what it does and how to use it.
+
+## Prerequisites
+
+1. **An AI coding assistant** — [Claude Code](https://claude.ai/code), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [ChatGPT](https://chatgpt.com) (including ChatGPT EDU), or any tool that supports the [agentskills specification](https://github.com/agentskills/agentskills).
+
+2. **Python 3** (for skills that produce .docx or .pdf output):
+   ```bash
+   pip install python-docx reportlab
+   ```
+
+3. **Pandoc** (for some document conversions):
+   ```bash
+   brew install pandoc    # macOS
+   ```
+
 ## Installation
 
-### Option A: Install from GitHub (recommended)
+The method depends on which AI tool you use.
 
-**Claude Code:**
-```
-/install-skill https://github.com/polkwagner/law-faculty-skills/tree/main/SKILL_NAME
-```
+### Claude Code
 
-For example, to install the MCQ generator:
+Install directly from GitHub:
 ```
 /install-skill https://github.com/polkwagner/law-faculty-skills/tree/main/law-mcq-generator
 ```
 
-**Other agentskills-compatible tools:** Follow your tool's skill installation instructions, pointing to this repository. The SKILL.md files conform to the [agentskills specification](https://github.com/agentskills/agentskills).
+Or copy manually:
+```bash
+cp -r law-mcq-generator ~/.claude/skills/
+```
 
-### Option B: Manual installation
+### Gemini CLI
 
-1. Clone or download this repository
-2. Copy the skill folder(s) you want into your tool's skills directory (e.g., `~/.claude/skills/` for Claude Code):
-   ```bash
-   cp -r law-mcq-generator ~/.claude/skills/
-   ```
-3. Restart your tool
+Copy the skill directory into Gemini's skills location:
+```bash
+cp -r law-mcq-generator ~/.gemini/skills/
+```
+
+### ChatGPT (including ChatGPT EDU)
+
+ChatGPT has native [Skills](https://help.openai.com/en/articles/20001066-skills-in-chatgpt) support on Business, Enterprise, and EDU plans — which includes Penn's ChatGPT EDU.
+
+**Option 1 — Upload as a ChatGPT Skill (recommended):**
+
+1. Download the SKILL.md file for the skill you want from this repository
+2. In ChatGPT, go to your **Skills** page
+3. Click **New skill** → **Upload from your computer**
+4. Upload the SKILL.md file
+
+The skill will appear in your skills list and can be shared with colleagues in your workspace.
+
+**Option 2 — Use as a Custom GPT:**
+
+If you prefer Custom GPTs, or if Skills aren't yet enabled in your workspace:
+
+1. Open the SKILL.md file and copy the content below the `---` frontmatter block
+2. Create a Custom GPT and paste it into the **Instructions** field
+
+**What works well:** Skills focused on writing and analysis — law-email-style, law-class-problems, lecture-slide-reviewer, rex, and the exam generators (law-mcq-generator, law-essay-generator) when producing plain-text output.
+
+**Limitations:** Skills that produce formatted .docx or .pdf files (law-memo, law-document, md-to-pdf) rely on Python scripts and file-system access that ChatGPT's environment handles differently. You'll get the content but may not get the exact Penn Carey Law formatting.
+
+### Other tools
+
+Copy skill directories into wherever your tool reads agentskills. The SKILL.md files conform to the [agentskills specification](https://github.com/agentskills/agentskills), so any compliant tool will discover and use them.
 
 ## Customization
 
@@ -77,18 +124,6 @@ The exam-generation skills (law-mcq-generator, law-essay-generator) include an I
 
 ### Document formatting
 The memo, document, and PDF skills use Penn Carey Law branding (logo, Cambria font). These work out of the box — the logo is bundled with the skill.
-
-## How Skills Work
-
-Skills are markdown instruction files that follow the [agentskills specification](https://github.com/agentskills/agentskills) — a cross-tool standard for AI coding assistants. Any compatible tool reads the SKILL.md file and follows its instructions. You invoke them naturally in conversation:
-
-- *"Write a memo to the faculty about the new grading policy"* → triggers law-memo
-- *"Generate 20 multiple choice questions covering chapters 3-5"* → triggers law-mcq-generator
-- *"Review my slides for Tuesday's class"* → triggers lecture-slide-reviewer
-- *"Create a class problem for session 12"* → triggers law-class-problems
-- *"Prep class 8"* → triggers law-class-prep
-
-Each skill's SKILL.md file contains the full reference for what it does and how to use it.
 
 ## Questions?
 
