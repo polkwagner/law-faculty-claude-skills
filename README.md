@@ -1,16 +1,12 @@
-# Claude Code Skills for Penn Carey Law Faculty
+# AI Skills for Penn Carey Law Faculty
 
-A collection of [Claude Code](https://claude.ai/code) skills for teaching, document production, and course preparation at Penn Carey Law. Each skill extends Claude Code with specialized capabilities — pick the ones useful to you.
+A collection of AI coding assistant skills for teaching, document production, and course preparation at Penn Carey Law. All skills conform to the [agentskills specification](https://github.com/agentskills/agentskills), so they work with any compatible tool — including [Claude Code](https://claude.ai/code), Gemini CLI, and others. Pick the ones useful to you.
 
 ## Prerequisites
 
 Before installing skills, you need:
 
-1. **Claude Code** — install from [claude.ai/code](https://claude.ai/code) or via your terminal:
-   ```bash
-   # macOS (Homebrew)
-   brew install claude-code
-   ```
+1. **An agentskills-compatible AI tool** — such as [Claude Code](https://claude.ai/code), Gemini CLI, or any tool that supports the [agentskills specification](https://github.com/agentskills/agentskills).
 
 2. **Python 3** (for document-producing skills):
    ```bash
@@ -43,8 +39,7 @@ Before installing skills, you need:
 
 ### Option A: Install from GitHub (recommended)
 
-Install individual skills directly in Claude Code:
-
+**Claude Code:**
 ```
 /install-skill https://github.com/polkwagner/law-faculty-skills/tree/main/SKILL_NAME
 ```
@@ -54,14 +49,16 @@ For example, to install the MCQ generator:
 /install-skill https://github.com/polkwagner/law-faculty-skills/tree/main/law-mcq-generator
 ```
 
+**Other agentskills-compatible tools:** Follow your tool's skill installation instructions, pointing to this repository. The SKILL.md files conform to the [agentskills specification](https://github.com/agentskills/agentskills).
+
 ### Option B: Manual installation
 
 1. Clone or download this repository
-2. Copy the skill folder(s) you want into `~/.claude/skills/`:
+2. Copy the skill folder(s) you want into your tool's skills directory (e.g., `~/.claude/skills/` for Claude Code):
    ```bash
    cp -r law-mcq-generator ~/.claude/skills/
    ```
-3. Restart Claude Code
+3. Restart your tool
 
 ## Customization
 
@@ -83,7 +80,7 @@ The memo, document, and PDF skills use Penn Carey Law branding (logo, Cambria fo
 
 ## How Skills Work
 
-Skills are markdown instruction files that Claude Code reads when triggered. You invoke them naturally in conversation:
+Skills are markdown instruction files that follow the [agentskills specification](https://github.com/agentskills/agentskills) — a cross-tool standard for AI coding assistants. Any compatible tool reads the SKILL.md file and follows its instructions. You invoke them naturally in conversation:
 
 - *"Write a memo to the faculty about the new grading policy"* → triggers law-memo
 - *"Generate 20 multiple choice questions covering chapters 3-5"* → triggers law-mcq-generator
