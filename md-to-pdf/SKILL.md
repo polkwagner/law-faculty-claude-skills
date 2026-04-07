@@ -9,6 +9,10 @@ description: >
   "polished PDF", "readable PDF", or any request involving markdown-to-PDF
   conversion. Also trigger when the user has a .md file and wants a
   nice-looking PDF output.
+license: CC-BY-4.0
+compatibility: "Requires reportlab"
+metadata:
+  author: "[Your Name]"
 ---
 
 # Markdown to PDF Renderer — Penn Carey Law Style

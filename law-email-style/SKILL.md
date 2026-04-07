@@ -5,6 +5,9 @@ description: >
   or compose any email or professional communication for [Your Name]. Trigger phrases include
   "draft an email", "write a reply", "compose a message", "draft a decline", "write to",
   "email about", or any request to produce written communication on the user's behalf.
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 
 # Law Email Style Guide

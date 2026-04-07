@@ -10,6 +10,9 @@ description: >
   "compile the comments", or any request involving .docx files with reviewer
   annotations. Also trigger when the user uploads multiple .docx files that appear
   to be versions of the same document reviewed by different people.
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 
 # DOCX Comment Summary Skill

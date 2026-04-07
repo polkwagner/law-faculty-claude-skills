@@ -12,6 +12,10 @@ description: >
   enforces assessment-science quality controls including SOLO taxonomy layering,
   construct alignment to course materials, and rubrics designed for AI-assisted
   grading.
+license: CC-BY-4.0
+compatibility: "Requires python-docx"
+metadata:
+  author: "[Your Name]"
 ---
 
 # Law School Essay Exam Generator

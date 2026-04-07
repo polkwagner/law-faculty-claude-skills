@@ -1,6 +1,10 @@
 ---
 name: law-document
 description: "Draft and produce formatted Word document (.docx) general documents - proposals, reports, briefing docs, white papers, and other formal written materials - in Penn Carey Law style. Use this skill whenever the user asks to write, draft, or create a document that is not a memo or email: proposals, policy documents, reports, briefing materials, white papers, or any substantive standalone written work. Trigger phrases include write a proposal, draft a document, create a report, briefing doc, policy document, white paper, or any request to produce a formal standalone document. Use the law-memo skill instead for memos specifically."
+license: CC-BY-4.0
+compatibility: "Requires python-docx"
+metadata:
+  author: "[Your Name]"
 ---
 
 # Law Document Skill

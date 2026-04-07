@@ -6,7 +6,10 @@ description: >
   compare a slide deck against readings. Trigger phrases include "review my slides",
   "check my slides", "slide review", "pacing check", or references to preparing
   a lecture or class session. For full class prep (slides + problems + lecture guide),
-  use the law-class-prep instead — it includes slide review as one of its three tasks.
+  use the law-class-prep skill instead — it includes slide review as one of its three tasks.
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 # Lecture Slide Reviewer
 

@@ -2,13 +2,19 @@
 """Publish skills from working installation to public repo.
 
 Copies included skills, applies privacy scrub rules, renames directories and files.
+Validates published output against the agentskills specification
+(https://github.com/agentskills/agentskills).
+
 Run from repo root: python3 scripts/publish.py
 """
 
 import os
 import re
 import shutil
+import sys
 from pathlib import Path
+
+import yaml
 
 # --- Configuration ---
 
@@ -122,7 +128,7 @@ SCRUB_RULES = [
 
     # --- Directory/skill name cross-references (broadest — last) ---
     (r"ip-problems", "law-class-problems"),
-    (r"class-prep-skill", "law-class-prep"),
+    (r"(?<![a-z-])class-prep(?![a-z-])", "law-class-prep"),
     (r"polk-document", "law-document"),
     (r"polk-memo", "law-memo"),
     (r"polk-email-style", "law-email-style"),
@@ -223,6 +229,112 @@ def check_placeholders():
     return problems
 
 
+# --- Agentskills Spec Validation ---
+# See https://agentskills.io/specification
+
+ALLOWED_FRONTMATTER_FIELDS = {
+    "name", "description", "license", "compatibility", "metadata", "allowed-tools",
+}
+
+# Name: lowercase alphanumeric + hyphens, no leading/trailing/consecutive hyphens, ≤64 chars
+NAME_PATTERN = re.compile(r"^[a-z0-9]([a-z0-9-]*[a-z0-9])?$")
+
+
+def fix_name_field(dest_dir: Path):
+    """Ensure the name field in SKILL.md matches the destination directory name.
+
+    After scrubbing, the name field should already match (e.g., polk-memo -> law-memo),
+    but this provides an explicit safety net rather than relying on scrub rules alone.
+    """
+    skill_md = dest_dir / "SKILL.md"
+    if not skill_md.exists():
+        return False
+
+    text = skill_md.read_text(encoding="utf-8")
+    expected_name = dest_dir.name
+
+    # Target just the name: line — works regardless of surrounding fields
+    new_text = re.sub(
+        r"(?m)^(name:\s*)\S+",
+        rf"\g<1>{expected_name}",
+        text,
+        count=1,
+    )
+
+    if new_text != text:
+        skill_md.write_text(new_text, encoding="utf-8")
+        return True
+    return False
+
+
+def validate_published_skill(dest_dir: Path) -> list[str]:
+    """Validate a published skill's SKILL.md against the agentskills spec.
+
+    Returns a list of error strings (empty if valid).
+    """
+    errors = []
+    skill_md = dest_dir / "SKILL.md"
+
+    if not skill_md.exists():
+        return [f"SKILL.md not found"]
+
+    text = skill_md.read_text(encoding="utf-8")
+
+    # Check frontmatter delimiters
+    m = re.match(r"^---\n(.*?\n)---", text, re.DOTALL)
+    if not m:
+        return [f"No valid YAML frontmatter (missing --- delimiters)"]
+
+    # Parse frontmatter
+    try:
+        fm = yaml.safe_load(m.group(1))
+    except yaml.YAMLError as e:
+        return [f"YAML parse error: {e}"]
+
+    if not isinstance(fm, dict):
+        return [f"Frontmatter is not a YAML mapping"]
+
+    # Unknown fields
+    unknown = set(fm.keys()) - ALLOWED_FRONTMATTER_FIELDS
+    if unknown:
+        errors.append(f"Unknown fields: {', '.join(sorted(unknown))}")
+
+    # name: required, ≤64 chars, valid format, matches directory
+    name = fm.get("name")
+    if not name or not isinstance(name, str):
+        errors.append("Missing or empty required field: name")
+    else:
+        if name != dest_dir.name:
+            errors.append(f"name '{name}' does not match directory '{dest_dir.name}'")
+        if len(name) > 64:
+            errors.append(f"name exceeds 64 chars ({len(name)})")
+        if "--" in name:
+            errors.append(f"name contains consecutive hyphens")
+        if not NAME_PATTERN.match(name):
+            errors.append(f"name '{name}' invalid (must be lowercase alphanumeric + hyphens)")
+
+    # description: required, ≤1024 chars
+    desc = fm.get("description")
+    if not desc:
+        errors.append("Missing or empty required field: description")
+    else:
+        desc_str = str(desc)
+        if len(desc_str) > 1024:
+            errors.append(f"description exceeds 1024 chars ({len(desc_str)})")
+
+    # compatibility: optional, ≤500 chars
+    compat = fm.get("compatibility")
+    if compat is not None and len(str(compat)) > 500:
+        errors.append(f"compatibility exceeds 500 chars ({len(str(compat))})")
+
+    # metadata: optional, must be a mapping if present
+    meta = fm.get("metadata")
+    if meta is not None and not isinstance(meta, dict):
+        errors.append(f"metadata must be a mapping, got {type(meta).__name__}")
+
+    return errors
+
+
 def main():
     print("Publishing skills from", SOURCE_DIR)
     print("Destination:", REPO_ROOT)
@@ -233,13 +345,50 @@ def main():
         return
 
     manifest = ["# Publish Manifest", f"Source: {SOURCE_DIR}", f"Dest: {REPO_ROOT}", ""]
+    has_errors = False
 
     for source_name, dest_name in SKILL_MAP.items():
         copy_skill(source_name, dest_name, manifest)
 
+    # Fix name fields to match destination directories (safety net after scrub)
+    manifest.append("\n--- Name field fixup ---")
+    for dest_name in SKILL_MAP.values():
+        dest_dir = REPO_ROOT / dest_name
+        if dest_dir.exists() and fix_name_field(dest_dir):
+            manifest.append(f"  FIXED: {dest_name}/SKILL.md name field -> '{dest_name}'")
+    manifest.append("  Done")
+
+    # Validate published skills against agentskills spec
+    manifest.append("\n--- Agentskills spec validation ---")
+    for dest_name in SKILL_MAP.values():
+        dest_dir = REPO_ROOT / dest_name
+        if not dest_dir.exists():
+            continue
+        errors = validate_published_skill(dest_dir)
+        if errors:
+            has_errors = True
+            manifest.append(f"  FAIL: {dest_name}:")
+            manifest.extend(f"    - {e}" for e in errors)
+        else:
+            manifest.append(f"  OK: {dest_name}")
+    # Also validate repo-maintained skills
+    for extra_skill in ["law-class-problems", "law-class-prep"]:
+        extra_dir = REPO_ROOT / extra_skill
+        if extra_dir.exists():
+            errors = validate_published_skill(extra_dir)
+            if errors:
+                has_errors = True
+                manifest.append(f"  FAIL: {extra_skill}:")
+                manifest.extend(f"    - {e}" for e in errors)
+            else:
+                manifest.append(f"  OK: {extra_skill}")
+    if not has_errors:
+        manifest.append("  All skills pass agentskills spec validation")
+
     # Safety check: excluded skills
     problems = safety_check()
     if problems:
+        has_errors = True
         manifest.append("\nSAFETY CHECK FAILURES:")
         manifest.extend(f"  - {p}" for p in problems)
 
@@ -260,6 +409,7 @@ def main():
                 if s in content:
                     manifest.append(f"  LEAK: '{s}' found in {f.relative_to(REPO_ROOT)}")
                     found_leaks = True
+                    has_errors = True
 
     if not found_leaks:
         manifest.append("  OK: No private strings found in output")
@@ -271,6 +421,9 @@ def main():
         manifest.extend(f"  WARNING: {w}" for w in placeholder_warnings)
 
     print("\n".join(manifest))
+
+    if has_errors:
+        sys.exit(1)
 
 
 if __name__ == "__main__":

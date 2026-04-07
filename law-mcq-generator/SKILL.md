@@ -12,6 +12,10 @@ description: >
   enforces critical quality controls including distractor validation, cognitive
   taxonomy tagging, and coverage balancing derived from the psychometric research
   literature.
+license: CC-BY-4.0
+compatibility: "Requires python-docx and Python 3"
+metadata:
+  author: "[Your Name]"
 ---
 
 # Law School MCQ Exam Generator

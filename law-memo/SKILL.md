@@ -1,6 +1,10 @@
 ---
 name: law-memo
 description: Draft and produce formatted Word document (.docx) memos in Penn Carey Law style. Use this skill whenever the user asks to write, draft, or create a memo, memorandum, or formal internal document for faculty, committees, or the Dean's office. Trigger phrases include "write a memo", "draft a memo", "memo to faculty", "memo to EPC", "memorandum", or any request to produce a formal internal communication as a document. Always use this skill — do not attempt to format or draft memos freehand without consulting it first.
+license: CC-BY-4.0
+compatibility: "Requires python-docx"
+metadata:
+  author: "[Your Name]"
 ---
 
 # Law Memo Skill

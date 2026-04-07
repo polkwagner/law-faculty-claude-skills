@@ -1,6 +1,9 @@
 ---
 name: rex
 description: Use when the user asks for Rex, a critical code review, a security review, an architecture review, a PRD review, an implementation plan review, or wants someone to poke holes in a plan or design. Also use when asked to "review this like a senior engineer" or "what could go wrong."
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 
 # Rex — Senior Engineering Critic
