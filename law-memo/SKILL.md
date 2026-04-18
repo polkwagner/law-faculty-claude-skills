@@ -13,6 +13,18 @@ Produces fully formatted Penn Carey Law memos as `.docx` files, matching [Your N
 
 ---
 
+## Agent Dependencies
+
+This skill dispatches sub-agents for pre-delivery quality checks. Each call is guarded — the memo still produces without them, but factual and style verification are weaker.
+
+- `factual-reviewer` — extracts discrete factual claims for verification.
+- `fact-verifier` — live web/source verification of specific claims.
+- `voice-style-checker` — voice, style, and AI-tell scan.
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
+
+---
+
 ## Environment
 
 This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whichever paths exist:
@@ -76,16 +88,19 @@ Paragraph with bottom border, `w:after="240"`:
 - Bold used sparingly for key terms and section heads
 - Section headings: bold Cambria 12pt, `w:before="200" w:after="80"`
 
-### Em-Dash Bullets
-Manual em-dash with tab, hanging indent — never Word list bullets:
+### Bullets
+Bullet character (•) with tab, hanging indent — never Word list bullets, never em-dash bullets:
 ```xml
 <w:pPr>
   <w:spacing w:line="276" w:lineRule="auto" w:after="120"/>
   <w:ind w:left="720" w:hanging="360"/>
 </w:pPr>
-<w:r>...<w:t>—	bullet text here</w:t></w:r>
+<w:r>...<w:t>•	bullet text here</w:t></w:r>
 ```
-For bold lead-in bullets, use separate runs: em-dash+tab run, bold run (lead phrase), normal run (rest of text).
+For bold lead-in bullets, use separate runs: bullet+tab run, bold run (lead phrase), normal run (rest of text).
+
+### Tables
+Tables must not split across pages. After building any table, apply `cantSplit` to every row and `keepNext` to all paragraphs in every row except the last. See the law-document skill for the `prevent_table_split(table)` helper function. Call it after populating every table.
 
 ### Footer
 Italic Cambria 10pt "Page x of y." centered. If cloning from sample, the footer is preserved automatically.
@@ -135,8 +150,40 @@ Memos layer these conventions on top of the CLAUDE.md voice baseline:
 
 ---
 
+## AI Writing Tell Check
+
+Before delivering any memo, scan the full text for common AI writing patterns and fix every instance. See the law-document skill for the complete checklist. The short version:
+
+- **Cut filler:** "a wide range of," "a variety of," "taken together," "reflecting the breadth of," "in a structured way," "the larger point is"
+- **Vary or cut overused words:** "several" (if used more than once), "curated," "nuanced," "multifaceted"
+- **Watch for structural tells:** identical sentence patterns across bullets, trailing summary lists that restate what was just said, overwrought framing where plain language would do
+- **Em-dash limit:** 1-2 per page max in inline prose. Replace most with commas.
+
+This check applies to every memo before delivery.
+
+**Automated review:** After writing the memo file:
+1. If the `factual-reviewer` agent is available, spawn it and pass it the file path. Fix any factual issues it flags.
+2. If the factual reviewer lists claims needing live verification, if the `fact-verifier` agent is available, spawn it with those claims. Correct any contradicted claims; flag unverifiable ones for the user.
+3. If the `voice-style-checker` agent is available, spawn it and pass it the file path. Fix any style issues it flags.
+Complete all steps before delivering to the user.
+
+---
+
 ## Filename Convention
 `Memo_[Topic]_[YYYY-MM].docx` (e.g., `Memo_OCI-Calendar_2025-09.docx`)
+
+---
+
+## Post-Generation Validation (Required)
+
+After generating any .docx file, run the validation script from the law-document
+skill (`~/.claude/skills/law-document/SKILL.md`, "Post-Generation Validation"
+section). This catches structural corruption (duplicate style IDs, misnamed images)
+that prevents Word from opening the file.
+
+If validation reports repairs, **switch to python-docx and regenerate** — the repair
+is a safety net, not a substitute for correct generation. Do not use Pandoc to
+generate .docx files.
 
 ---
 
@@ -149,7 +196,8 @@ Memos layer these conventions on top of the CLAUDE.md voice baseline:
 - [ ] RE value is bold, with hanging indent (`w:left="1440" w:hanging="1440"`)
 - [ ] Horizontal rule after header (bottom border, sz=6, after=240)
 - [ ] Cambria 12pt throughout — NO Book Antiqua
-- [ ] Em-dash bullets with hanging indent, never Word list bullets
+- [ ] Bullet character (•) with hanging indent, never Word list bullets
 - [ ] Footer: italic Cambria 10pt "Page x of y." centered
 - [ ] Tone follows CLAUDE.md voice baseline (direct, active, no filler)
+- [ ] AI writing tell check passed (see section above)
 - [ ] Closes with action/next-steps paragraph

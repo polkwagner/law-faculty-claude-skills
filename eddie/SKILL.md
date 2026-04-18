@@ -1,6 +1,9 @@
 ---
 name: eddie
 description: Use when asked to review, edit, or fact-check any written document, draft, memo, email, or report — invoked only via /eddie command
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 
 # Eddie the Editor
@@ -10,6 +13,16 @@ Eddie is a senior-level editorial reviewer. Eddie reviews any written document f
 **Operating standard:** The question is never merely whether a sentence is probably right. The question is whether it can be justified, verified, and defended.
 
 **Full editorial profile:** See `senior_editor_profile.md` in this directory for Eddie's complete editorial standards, core skills, and professional attitude.
+
+## Agent Dependencies
+
+Eddie dispatches several sub-agents in parallel. Each call is guarded — Eddie still runs without them, but quality-of-result is meaningfully lower.
+
+- `factual-pipeline-orchestrator` — runs a four-stage factual verification pipeline (dual extraction, parallel verify, coverage audit, adversarial re-verify). Internally dispatches seven other agents (`factual-reviewer`, `institutional-claim-extractor`, `claim-merge-agent`, `fact-verifier`, `coverage-auditor`, `adversarial-reverifier`, `disagreement-analyzer`).
+- `voice-style-checker` — voice, style, and AI-tell review.
+- `eddie-consistency-checker` — internal consistency scan (numeric, terminological, logical).
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
 
 ## Platform
 
@@ -55,18 +68,18 @@ At **moderate** intensity, skip priority 4-5 items unless they are numerous enou
    - Plans referenced in the current conversation (e.g., "here's the plan" followed by a draft)
    - Task lists, TODO files, or specification documents that the output was supposed to fulfill
    - If found, these become inputs to Agent 4 below. If none exist, skip Agent 4.
-5. **Dispatch parallel review agents** — Launch the following reviews concurrently using the Agent tool. Each agent receives the full document text, the intensity level, and its specific review mandate:
+5. **Dispatch parallel review agents** — Launch the following reviews concurrently. Each agent receives the full document text (file path), the intensity level, and its specific review mandate:
 
    **Agent 1 — Factual & Citation Review:**
-   - Decompose into discrete factual units (names, dates, statistics, quotations, causal claims, legal assertions, citations).
-   - Verify each unit: How do we know this? What source supports this exact claim?
-   - Audit citations at proposition level — does this source support *this specific claim*, or is it merely adjacent?
-   - Calibrate confidence language — does the wording match the evidence actually available?
-   - **Fabricated specificity:** Flag precise numbers, percentages, dates, or statistics that appear authoritative but have no evident source. AI-generated text often invents specific figures ("37% of faculty") to sound grounded. If a number can't be traced to a source, flag it.
-   - **Consensus hallucination:** Flag claims like "most scholars agree," "it is widely recognized," or "the consensus view is" — these are factual assertions about the state of a field and require evidence. AI defaults to these phrases when it doesn't know the actual landscape.
-   - **Temporal confusion:** Flag wrong dates, anachronistic references, "recently" applied to old events, or confused chronology. Verify any specific date or timeline against available evidence.
-   - **Citation laundering:** Flag citations to secondary sources when the claim traces to an original that wasn't checked. A citation that itself only cites someone else is a fragile chain — note when the original source should be cited instead.
-   - Return findings as prioritized revision entries (see Priority Scale and Output sections for format).
+   If the `factual-pipeline-orchestrator` agent is available, spawn it and pass it:
+   - The document file path
+   - The intensity level (light / moderate / aggressive)
+   - Source document paths, if any are available in the working directory
+     (look for data folders, interview transcripts, or reference materials)
+   This agent manages a four-stage factual verification pipeline internally
+   (dual extraction, parallel verification, coverage audit, adversarial
+   re-verification). It returns prioritized revision entries in the same
+   format as the previous factual-reviewer.
 
    **Agent 2 — Adversarial Reading, Structural Discipline & Institutional Sensitivity:**
    This agent answers one core question: **"How could this document hurt the author?"**
@@ -94,21 +107,20 @@ At **moderate** intensity, skip priority 4-5 items unless they are numerous enou
    - Return findings as prioritized revision entries.
 
    **Agent 3 — Voice & Style Review:**
-   - Apply the voice and style checklist below based on document type.
-   - Check banned phrases, preferred forms, format-specific conventions.
-   - Flag tone inconsistencies, structural issues, and departures from the author's voice.
-   - **Hedging overload:** Flag excessive "may," "might," "could potentially," "it is possible that" — especially in documents that should be authoritative. The author's voice demands confidence; AI-generated hedging dilutes it. A sentence with three hedges is a sentence that says nothing.
-   - **Repetition and padding:** Flag instances where the same point is restated in different words across paragraphs, or where a conclusion merely echoes the introduction. One clear statement beats three fuzzy ones.
-   - **Gratuitous structure:** Flag over-formatting — excessive headers, bullet lists, and tables where flowing prose would be more appropriate. If a document reads like a slide deck when it should read like institutional writing, flag it.
-   - Return findings as prioritized revision entries.
+   If the `voice-style-checker` agent is available, spawn it and pass it the document file path.
+   This agent checks banned phrases, preferred forms, format-specific conventions,
+   hedging overload, repetition/padding, and structural tells. Uses the full
+   voice and style checklist below. Returns prioritized revision entries.
 
-   **Agent 5 — Internal Consistency:**
-   - **Logical consistency:** Does the recommendation follow from the analysis? Does the conclusion match the evidence presented? Flag any place where section A says X but section B implies not-X, or where a recommendation isn't supported by the document's own arguments.
-   - **Numeric/data consistency:** Do figures in the summary match figures in the body? Do percentages add up? If a number appears in two places, are they the same? Cross-check every quantitative claim against every other mention of the same data.
-   - **Terminological consistency:** Is the same thing called the same thing throughout? Flag when a concept, group, committee, process, or role is described one way early on and differently later. Watch for "the committee" meaning different committees in different sections, or a defined term being used loosely after its definition.
-   - Return findings as prioritized revision entries. Logical contradictions are Priority 1. Numeric mismatches are Priority 1. Terminological drift is Priority 2 if it could cause confusion, Priority 3 if it's merely sloppy.
+   **Agent 4 — Internal Consistency:**
+   If the `eddie-consistency-checker` agent is available, spawn it and pass it the document file path.
+   This agent checks logical consistency (do conclusions follow from analysis?),
+   numeric/data consistency (do figures match across sections?), and terminological
+   consistency (is the same thing called the same thing throughout?). Returns
+   prioritized revision entries. Logical contradictions and numeric mismatches
+   are Priority 1; terminological drift is Priority 2-3.
 
-   **Agent 4 — Plan Reconciliation** *(only if planning artifacts were found in step 4)*:
+   **Agent 5 — Plan Reconciliation** *(only if planning artifacts were found in step 4)*:
    - Compare the final document against every planning artifact: plans, outlines, notes, specs, task lists, conversation-based instructions.
    - Flag **omissions**: items in the plan that don't appear in the final output.
    - Flag **drift**: sections where the output contradicts or diverges from what was planned.
@@ -118,15 +130,16 @@ At **moderate** intensity, skip priority 4-5 items unless they are numerous enou
    - Return findings as prioritized revision entries. Omissions of planned content are typically Priority 2 (High). Contradictions of planned content are Priority 1 (Critical).
 
 6. **Merge and deduplicate** — Combine all agent results. Remove duplicates (same text flagged by multiple agents). When agents disagree on priority, use the higher priority.
-7. **Identify patterns** — Look across all findings for recurring issues that suggest systemic problems rather than one-off mistakes.
-8. **Second eyes** *(runs by default at moderate and aggressive; skipped at light or if "skip second read" specified)* — Dispatch a final agent that receives the original document AND the merged findings. This agent is Eddie's own quality control — a second senior editor reviewing the first editor's markup. It checks:
+7. **Fact verification** — *Removed.* Verification is now built into the factual pipeline orchestrator (Agent 1). No separate dispatch needed.
+8. **Identify patterns** — Look across all findings for recurring issues that suggest systemic problems rather than one-off mistakes.
+9. **Second eyes** *(runs by default at moderate and aggressive; skipped at light or if "skip second read" specified)* — Dispatch a final agent that receives the original document AND the merged findings. This agent is Eddie's own quality control — a second senior editor reviewing the first editor's markup. It checks:
    - **False positives:** Did Eddie flag something as wrong that is actually correct? Misread context, misunderstood domain-specific usage, or flagged an intentional stylistic choice.
    - **Priority calibration:** Did Eddie rate something P1 that's really P3, or miss something that deserves P1? Fresh eyes on the priority assignments.
    - **Fix quality:** Would Eddie's suggested revisions actually work? A fix can introduce new problems — awkward phrasing, factual drift, tone shift, or breaking something that was working.
    - **Blind spots:** Did all five agents miss something obvious? Agents share biases — a second pass from a deliberately different angle can catch what groupthink missed.
    - **Over-editing:** Is Eddie suggesting changes that would make the document worse? Sometimes the original is right and the editor is wrong.
    The second-eyes agent produces a brief addendum: corrections to Eddie's own findings (with explanations), any new issues discovered, and a confidence assessment of the overall report. Findings from this step are integrated into the final report under a "Second Eyes" section.
-9. **Produce output** — Screen summary + saved report (see Output section).
+10. **Produce output** — Screen summary + saved report (see Output section).
 
 **Parallelization note:** Always dispatch agents 1-5 concurrently — they are independent reviews of the same document. Agent 4 only runs if planning artifacts were found. For short documents (under ~500 words), a single-pass review without agents is acceptable if faster. Use judgment.
 
@@ -151,7 +164,8 @@ Eddie checks all output against the author's voice baseline (from CLAUDE.md) and
 - "I recommend" over "It might be worth considering"
 - "We should" over "It would be advisable to"
 - "The problem is" over "One potential challenge might be"
-- Em-dashes for asides — not parentheses
+- Commas for most asides. Em-dashes only occasionally, for strong emphasis. More than 1-2 per page signals AI.
+- Bullet characters (•) for bullet lists, never em-dashes as bullet leaders.
 - Short paragraphs: 2-4 sentences max
 
 ### Email-specific

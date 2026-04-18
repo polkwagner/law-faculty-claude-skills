@@ -13,6 +13,14 @@ metadata:
 ---
 # Lecture Slide Reviewer
 
+## Agent Dependencies
+
+This skill dispatches one sub-agent for alignment analysis. The call is guarded — the reviewer still runs without it, but the deep slide-to-reading alignment pass is skipped.
+
+- `slide-reading-alignment` — compares slides against assigned readings session-by-session and returns a coverage report.
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
+
 ## Context
 
 You are reviewing lecture slides for a law school class session. The goal is to
@@ -38,7 +46,11 @@ Before writing anything:
 5. **Read the assigned readings** thoroughly, noting the key concepts, cases,
    doctrines, and frameworks covered.
 
-6. Only then begin your analysis.
+6. If the `slide-reading-alignment` agent is available, spawn it and pass it the slide deck path,
+   readings path, and class duration. Present the agent's report to the user.
+
+The agent handles the full analysis below. The criteria are documented here
+for reference and for environments where the agent is unavailable.
 
 ## What to Check
 

@@ -42,6 +42,24 @@ Skills are invoked naturally in conversation — you don't need special syntax:
 
 Each skill's SKILL.md file contains the full reference for what it does and how to use it.
 
+## Sub-Agents
+
+Several skills dispatch parallel sub-agents for quality checks — these live under `agents/` in this repo. Install them into `~/.claude/agents/` (or the agents directory for your tool) to get the full experience.
+
+| Used by | Agents |
+|---|---|
+| **eddie** | factual-pipeline-orchestrator (which in turn spawns factual-reviewer, institutional-claim-extractor, claim-merge-agent, fact-verifier, coverage-auditor, adversarial-reverifier, disagreement-analyzer), eddie-consistency-checker, voice-style-checker |
+| **law-mcq-generator** | adversarial-balance-validator, construct-alignment-tracer, double-read-pass, emphasis-map-builder, mcq-structural-reviewer |
+| **law-essay-generator** | adversarial-balance-validator, construct-alignment-tracer, double-read-pass, emphasis-map-builder |
+| **lecture-slide-reviewer**, **law-class-prep** | slide-reading-alignment |
+
+Skills work without their agents — each skill wraps agent calls in `if the <name> agent is available, spawn it` guards — but quality-of-result is meaningfully lower without them. On tools that don't support sub-agents (Gemini CLI, ChatGPT), skills fall back to running the checks inline where possible.
+
+Copy all agents at once:
+```bash
+cp -r agents/* ~/.claude/agents/
+```
+
 ## Prerequisites
 
 1. **An AI coding assistant** — [Claude Code](https://claude.ai/code), [Gemini CLI](https://github.com/google-gemini/gemini-cli), [ChatGPT](https://chatgpt.com) (including ChatGPT EDU), or any tool that supports the [agentskills specification](https://github.com/agentskills/agentskills).

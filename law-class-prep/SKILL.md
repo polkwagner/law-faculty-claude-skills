@@ -11,6 +11,9 @@ description: >
   or when preparing materials for an upcoming lecture. This skill supersedes the
   lecture-slide-reviewer skill when all three outputs are requested together. Always
   use this skill rather than doing class prep steps freehand.
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 
 # Class Prep Skill

@@ -5,6 +5,9 @@ description: >
   update, or revise class problems, exercises, or hypotheticals for any law course.
   Trigger phrases include "class problem", "update the problem", "create a problem for",
   "revise the hypothetical", or references to specific class sessions needing problems.
+license: CC-BY-4.0
+metadata:
+  author: "[Your Name]"
 ---
 # Law Class Problem Generator and Reviser
 

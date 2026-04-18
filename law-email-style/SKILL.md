@@ -14,6 +14,16 @@ metadata:
 
 Use this guide for email-specific formatting. Voice, tone, banned phrases, and preferred expressions are defined in the **Writing & Tone** section of CLAUDE.md — that baseline always applies. This skill adds email-specific structure on top.
 
+## Agent Dependencies
+
+This skill dispatches sub-agents for pre-send quality checks. Each call is guarded — the email still produces without them, but factual and style verification are weaker.
+
+- `factual-reviewer` — extracts discrete factual claims for verification.
+- `fact-verifier` — live web/source verification of specific claims.
+- `voice-style-checker` — voice, style, and AI-tell scan.
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
+
 ## Greeting
 
 Match the audience and formality:
@@ -25,15 +35,24 @@ Match the audience and formality:
 ## Sign-Off
 
 - **Default:** Just your first name on its own line. No title, no phone number.
-- **More formal / external:** "Best,\n\nPolk"
+- **More formal / external:** "Best,
+
+[Your First Name]"
 - **Never:** "Sincerely," "Regards," "Warm regards," "Cheers," "All the best,"
 - May include a warm closing line before the sign-off when the tone fits: "I look forward to seeing you in the halls next week." or "Let me know how I can help!"
 
 ## Email Structure
 
 - Use **bold section headers** in longer emails to organize topics. No numbered sections for headers.
-- Bulleted or numbered lists for action items, deadlines, or options.
-- "So —" as a casual transition between sections
+- Bullet characters (•) for bullet lists, never em-dashes as bullet leaders.
+- Numbered lists for sequential action items, deadlines, or options.
+- "So," as a casual transition between sections.
+- Run the AI Writing Tell Check (see CLAUDE.md) before sending. Applies to emails too.
+- **Automated review:** After drafting:
+  1. If the `factual-reviewer` agent is available, spawn it to check all factual claims. Fix any issues it flags.
+  2. If the factual reviewer lists claims needing live verification, if the `fact-verifier` agent is available, spawn it with those claims. Correct any contradicted claims; flag unverifiable ones for the user.
+  3. If the `voice-style-checker` agent is available, spawn it to scan for style issues. Fix any issues it flags.
+  Complete all steps before presenting to the user.
 
 ## Example Patterns
 

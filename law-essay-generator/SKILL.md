@@ -20,6 +20,18 @@ metadata:
 
 # Law School Essay Exam Generator
 
+## Agent Dependencies
+
+This skill dispatches several sub-agents for quality checks. Each call is guarded — the skill works without them, but coverage balancing, construct alignment, and AI-tell checks are significantly weaker.
+
+- `emphasis-map-builder` — ranked emphasis map of testable doctrines from course materials.
+- `construct-alignment-tracer` — verifies every tested issue traces back to assigned readings or class content.
+- `adversarial-balance-validator` — validates that both sides of each legal issue can make credible arguments.
+- `double-read-pass` — fresh-eyes review of fact pattern, rubric, and model answer.
+- `voice-style-checker` — AI-tell scan on the fact pattern.
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
+
 ## Environment
 
 This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**:
@@ -71,18 +83,24 @@ To add a new preset: add a column to this table with the course's defaults.
    - Time allocation per essay (determines issue count and depth)
    - Maximum word count per essay (constrains scope)
    - Any topics to emphasize or avoid
-   - Whether prior exam essay questions are available (and if so, where).
-     See the Prior Exam Check section below.
+   - **Path to former exam questions folder** (if available). The folder should
+     contain an INDEX.md with YAML frontmatter describing each exam file. If
+     no index exists, read the exam files directly and extract the dimensions
+     for the Prior Exam Check. See the Prior Exam Check section below.
+   - **Prompt style preference:** open-ended analysis or role-playing directive.
+     See the Prompt Style section below for guidance on when to use each.
 
 3. **Read the syllabus.** Identify class sessions, topics, reading assignments,
    and calculate coverage weights by doctrinal area (number of sessions per area).
 
-4. **Read the course materials** and build the emphasis map. See the Emphasis
-   Detection section below.
+4. **Build the emphasis map.** If the `emphasis-map-builder` agent is available, spawn it and pass
+   it the course materials folder path, course name, and doctrinal areas. The
+   agent reads all available materials (readings, slides, transcripts, problems,
+   debriefs), ranks doctrines by emphasis level, and identifies course themes.
+   See the Emphasis Detection section below for the ranking criteria.
 
-5. **Identify course themes.** While reading the materials, look for recurring
-   themes, philosophies, or cross-cutting questions that appear across multiple
-   class sessions. See the Course Themes section below.
+5. **Review the agent's output.** Check that the emphasis ranking and course
+   themes make sense given what you know about the course structure.
 
 6. **Present findings to the user for steering:** the emphasis map AND the
    identified course themes. Ask the user to confirm, correct, or add themes.
@@ -110,7 +128,8 @@ To add a new preset: add a column to this table with the course's defaults.
    **e. Course themes engaged:** Which themes does this design activate?
 
    **f. Prior exam differentiation:** How this design differs from each prior
-   exam on the 4 dimensions.
+   exam on the 5 dimensions (doctrinal areas, scenario type, issue set,
+   cross-cutting asset, discrimination features).
 
    **g. Point distribution summary:** Points by SOLO level (vs. ~30/45/25
    target) and by doctrinal area (vs. course coverage weights).
@@ -284,21 +303,36 @@ For each prior essay, extract:
 
 ### Novelty Requirements
 
-The new essay must differ from each prior essay on **at least 3 of 4**
+The new essay must differ from each prior essay on **at least 3 of 5**
 dimensions:
 
-| Dimension | Same is OK | Must Differ |
-|---|---|---|
-| **Doctrinal areas tested** | Testing the same areas (e.g., trade secret + patent + copyright) is fine — these are the course's core content | — |
-| **Scenario type** | — | Different industry, setting, and character archetypes (if a prior exam used a restaurant, don't use a restaurant) |
-| **Issue set** | Individual doctrines can repeat | The specific *combination* of issues should not repeat (if a prior exam tested trade secret misappropriation + §101 eligibility + fair use, don't test that exact trio again) |
-| **Cross-cutting asset** | — | The central asset that sits at the intersection of regimes should be different (if a prior exam centered on a recipe, don't center on a recipe) |
-| **Discrimination features** | — | The buried facts, ambiguous facts, and red herrings should test different doctrinal traps (if a prior exam buried an NDA consideration issue, don't bury the same issue) |
+| Dimension | What to Compare |
+|---|---|
+| **Doctrinal areas tested** | Which IP regimes does the question touch? The same areas can repeat across years (these are the course's core content), but the specific combination and breadth should vary. |
+| **Scenario type** | Industry, setting, and character archetypes. If a prior exam used a restaurant, don't use a restaurant. |
+| **Issue set** | The specific legal issues tested. Individual doctrines can repeat, but the specific *combination* should not. If a prior exam tested trade secret misappropriation + §101 eligibility + fair use, don't test that exact trio again. |
+| **Cross-cutting asset** | The central asset that sits at the intersection of regimes. If a prior exam centered on a recipe, don't center on a recipe. |
+| **Discrimination features** | The buried facts, ambiguous facts, and red herrings should test different doctrinal traps. If a prior exam buried an NDA consideration issue, don't bury the same issue. |
+
+### How to Read Prior Exams
+
+If the user provides a folder path:
+1. Look for an INDEX.md file. If present, read it first — it contains YAML
+   frontmatter for each exam file (topics, points, word limits, scenario
+   descriptions) and a topic-by-year matrix.
+2. Parse the YAML frontmatter from each exam file listed in the index for
+   structured comparison data.
+3. If no INDEX.md exists, read each exam file directly and extract the
+   5 dimensions manually.
 
 ### How to Use
 
 - Read prior exams early (step 2) so the constraint informs all design
   decisions
+- Run the 5-dimension novelty check automatically and present a **novelty
+  matrix** to the user: rows = prior questions, columns = dimensions,
+  cells = same/different. The new essay must differ on >= 3 of 5 dimensions
+  from every prior question.
 - When presenting the essay plan (step 7), explicitly note how the new
   essay differs from each prior exam
 - Include a "Prior exam differentiation" section in the Quality Analysis
@@ -307,6 +341,46 @@ dimensions:
 ### When No Prior Exams Are Available
 
 If the user says no prior exams exist, skip this check. Do not ask repeatedly.
+
+## Prompt Style
+
+The call of the question can use one of two styles. Ask the user which they prefer, and recommend based on the exam structure:
+
+### Open-Ended Analysis (Recommended for single-essay exams)
+
+> "Analyze the intellectual property issues raised by the facts above. For each issue you identify, state the applicable legal framework, apply it to the facts, and assess the strength of each party's position."
+
+**Tests:** Issue identification without prompting, multi-perspective analysis (both sides of each issue), organizational judgment, triage under word constraints.
+
+**Recommended when:**
+- The exam has only one essay question (the single essay must test cross-doctrinal breadth)
+- The essay is designed to test cross-doctrinal synthesis (GEN-level issues)
+- The essay is paired with a discrete-knowledge component (e.g., MCQs) that already tests specific doctrinal recall
+
+**Trade-offs:** Higher issue-spotting burden on students. No organizational scaffolding — weaker students may produce disorganized answers. Requires balanced analysis rather than one-sided advocacy.
+
+### Role-Playing Directive (Recommended for multi-essay exams)
+
+> "[Client] has hired you to [write a memo / draft a letter / assess the risks]. [Specific directive about perspective, organization, or doctrinal scope]."
+
+**Tests:** Professional writing in context, directed analysis from a specific perspective, depth within a narrower doctrinal scope.
+
+**Recommended when:**
+- The exam has multiple essay questions (each can afford to narrow its scope)
+- The question targets specific doctrinal depth rather than breadth
+- The professor wants to control the organizational structure of student answers
+
+**Trade-offs:** Pre-selects doctrines (reduces issue-spotting burden), constrains perspective to one side, provides organizational scaffolding that may mask analytical skill.
+
+### Choosing a Style
+
+| Exam Structure | Recommended Style | Reason |
+|---|---|---|
+| 1 essay + MCQs | Open-ended | The single essay must test what MCQs cannot: integrated analysis, issue identification, triage |
+| 2-3 essays, each focused | Role-playing | Each question can afford to narrow scope and go deeper |
+| 1 essay, no MCQs | Open-ended or hybrid | Depends on how much ground the essay needs to cover |
+
+A **hybrid** approach is also possible: use a role-playing setup ("You are counsel for X") but keep the directive open ("analyze the IP issues and advise your client"). This provides professional context without narrowing the doctrinal scope.
 
 ## Assessment-Science Framework
 
@@ -373,10 +447,11 @@ each framework in isolation. The C student identifies only the obvious one.
   dates, publication dates, employment start/end dates, patent expiration dates)
 - A memorable subtitle: "The one with the [thing]"
 - **No real company names or real people** in the narrative
-- The call of the question is **regime-neutral**: "Analyze the intellectual
-  property issues raised by the facts above. For each issue you identify,
-  state the applicable legal framework, apply it to the facts, and assess the
-  strength of each party's position."
+- The call of the question follows the user's chosen **prompt style** (see
+  the Prompt Style section above). If the user chose open-ended, use a
+  regime-neutral directive. If role-playing, frame around a client and
+  specific task. If no preference was stated, default based on the exam
+  structure (single essay → open-ended; multiple essays → role-playing).
 
 ### Fact Engineering for Layering
 
@@ -527,23 +602,31 @@ Contents:
 2. Ask for: materials path, number of essays, time per essay, word limit,
    preferences, and whether prior exam essays are available
 3. Read syllabus → calculate coverage weights
-4. Read prior exam essays (if provided) → extract scenario types, issue
-   sets, cross-cutting assets, discrimination features
-5. Read course materials → build emphasis map
-6. Identify course themes from materials
-7. Present emphasis map AND course themes to user for steering
-8. Plan each essay → present issue table, cross-cutting design, scenario
+4. Read prior exam essays (if provided) → look for INDEX.md with YAML
+   frontmatter; extract 5 dimensions (doctrinal areas, scenario type, issue
+   set, cross-cutting asset, discrimination features); present novelty matrix
+5. `emphasis-map-builder` agent (if available) → returns emphasis map + course themes
+6. Present emphasis map AND course themes to user for steering
+7. Plan each essay → present issue table, cross-cutting design, scenario
    concept, discrimination features, themes, prior exam differentiation,
    and point distribution to user. STOP and wait for approval.
-9. Get explicit approval before writing — revise plan if user gives feedback
-10. Write fact pattern (engineer facts for layering)
-11. Build rubric (concrete textual markers for AI-assisted grading)
-12. Write model answer (within student word limit)
-13. Produce quality analysis (including prior exam differentiation)
-14. Double read — re-read all four outputs as a fresh pair of eyes; fix
-    any problems found
-15. Run self-check
-16. Generate four .docx files per essay
+8. Get explicit approval before writing — revise plan if user gives feedback
+9. Write fact pattern (engineer facts for layering)
+10. Build rubric (concrete textual markers for AI-assisted grading)
+11. Write model answer (within student word limit)
+12. Produce quality analysis (including prior exam differentiation)
+13. `construct-alignment-tracer` agent (if available) → verify every issue traces to course materials
+14. `adversarial-balance-validator` agent (if available) → verify both sides can argue each issue
+15. `double-read-pass` agent (if available) → fresh-eyes review of all four outputs; fix any problems found
+16. `voice-style-checker` agent (if available) → fix any style issues in the fact pattern
+17. Run self-check
+18. Generate four .docx files per essay
+19. Generate machine-readable rubric JSON alongside the .docx rubric (see
+    Rubric Format for Machine Grading below)
+20. **Recommend running the essay dry run tool** (`~/code/essay-dry-run/`)
+    to stress-test the essay with multiple AI models before finalizing.
+    This is an external tool run from the terminal, not a subagent.
+    Results feed back into potential revisions to the fact pattern or rubric.
 
 ## Double Read
 
@@ -593,6 +676,8 @@ substantive problems that checklists miss.
 
 If the double read reveals problems, fix them before running the self-check.
 
+**AI tell scan:** After the double read, if the `voice-style-checker` agent is available, spawn it and pass it the fact pattern file path. Fix any issues it flags before running the self-check.
+
 ## Self-Check Before Delivering
 
 Run every check. If any fails, revise before delivering.
@@ -611,10 +696,59 @@ Run every check. If any fails, revise before delivering.
   relational/extended abstract issues)
 - [ ] Fact pattern implicates 3+ doctrinal areas overlapping on the same facts
 - [ ] Prior exam compliance: new essay differs from each prior exam on at
-  least 3 of 4 dimensions (scenario type, issue set, cross-cutting asset,
-  discrimination features) — or no prior exams were provided
+  least 3 of 5 dimensions (doctrinal areas, scenario type, issue set,
+  cross-cutting asset, discrimination features) — or no prior exams were
+  provided
 - [ ] Named characters, realistic setting, clear timeline with specific dates
 - [ ] Call of the question is regime-neutral
+
+## Rubric Format for Machine Grading
+
+In addition to the human-readable rubric .docx (Output 2), generate a
+machine-readable JSON file alongside it. This enables the essay dry run tool
+and future grading tools to parse the rubric programmatically.
+
+Save as `[exam_name]_rubric.json` in the same output directory as the .docx.
+
+### JSON Schema
+
+```json
+[
+  {
+    "id": "TS-1",
+    "description": "Trade secret analysis of the flavor-pairing database...",
+    "doctrinal_area": "trade_secret",
+    "solo_level": "unistructural",
+    "full_credit": "Must cite UTSA §1(4)... Must reference that Mira compiled...",
+    "partial_credit": "Identifies trade secret issue but doesn't address...",
+    "no_credit": "Misses the trade secret issue entirely",
+    "points_full": 10,
+    "points_partial": 5,
+    "points_no": 0
+  }
+]
+```
+
+### ID Convention
+
+Use the pattern `[AREA]-[N]` where AREA is:
+- TS = Trade Secret
+- PAT = Patent
+- CR = Copyright
+- TM = Trademark
+- ROP = Right of Publicity
+- GEN = General / Cross-cutting
+- RH = Red Herring (0 points, flagged for deduction if over-analyzed)
+
+### Required Fields
+
+Every issue must include all of: `id`, `description`, `doctrinal_area`,
+`solo_level`, `full_credit`, `partial_credit`, `no_credit`, `points_full`,
+`points_partial`, `points_no`.
+
+The `full_credit`, `partial_credit`, and `no_credit` fields should contain
+the same textual markers as the .docx rubric (CASE/STATUTE, FACT REFERENCE,
+ANALYTICAL MOVE) so the grading tool can match student text against criteria.
 
 ## What NOT to Do
 

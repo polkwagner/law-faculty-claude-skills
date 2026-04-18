@@ -13,6 +13,18 @@ Produces professional Penn Carey Law documents as `.docx` files — proposals, r
 
 ---
 
+## Agent Dependencies
+
+This skill dispatches sub-agents for pre-delivery quality checks. Each call is guarded — the document still produces without them, but factual and style verification are weaker.
+
+- `factual-reviewer` — extracts discrete factual claims for verification.
+- `fact-verifier` — live web/source verification of specific claims.
+- `voice-style-checker` — voice, style, and AI-tell scan.
+
+Install from the `agents/` directory of this skill's repo into `~/.claude/agents/`.
+
+---
+
 ## Environment
 
 This skill works in both **Claude Code CLI** and **Claude.ai / Cowork**. Use whichever paths exist:
@@ -122,18 +134,44 @@ With `w:after="240"`.
 - Cambria 12pt, `w:line="276" w:lineRule="auto" w:after="160"`
 - Paragraphs separated by spacing, not blank lines
 - **Bold** used sparingly for key terms, action items, or critical facts
-- Tables: clean, minimal borders; Cambria 12pt in cells; used for comparative or structured data
+- Tables: clean, minimal borders; Cambria 12pt in cells; used for comparative or structured data; **must not split across pages** (see Tables section below)
 
-### Em-Dash Bullets
-Manual em-dash with tab, hanging indent — never Word list bullets:
+### Tables
+Tables must not split across pages. After building any table, apply `cantSplit` to every row and `keepNext` to all paragraphs in every row except the last. This prevents individual rows from breaking mid-row and keeps the entire table on one page.
+
+```python
+def prevent_table_split(table):
+    """Prevent table rows from splitting across pages and keep table together."""
+    rows = table.rows
+    for i, row in enumerate(rows):
+        tr = row._tr
+        trPr = tr.get_or_add_trPr()
+        trPr.append(OxmlElement("w:cantSplit"))
+        # keepNext on all rows except the last keeps the table together
+        if i < len(rows) - 1:
+            for cell in row.cells:
+                for paragraph in cell.paragraphs:
+                    pPr = paragraph._element.get_or_add_pPr()
+                    pPr.append(OxmlElement("w:keepNext"))
+```
+
+Call `prevent_table_split(table)` after populating every table. For very large tables (20+ rows) that genuinely cannot fit on one page, Word will still break them at a row boundary — these properties ensure it never breaks mid-row.
+
+### Bullets
+Bullet character (•) with tab, hanging indent — never Word list bullets, never em-dash bullets:
 ```xml
 <w:pPr>
   <w:spacing w:line="276" w:lineRule="auto" w:after="120"/>
   <w:ind w:left="720" w:hanging="360"/>
 </w:pPr>
-<w:r>...<w:t>—	bullet text here</w:t></w:r>
+<w:r>...<w:t>•	bullet text here</w:t></w:r>
 ```
-For bold lead-in bullets, use separate runs: em-dash+tab run, bold run (lead phrase), normal run (rest of text).
+For bold lead-in bullets, use separate runs: bullet+tab run, bold run (lead phrase), normal run (rest of text).
+
+### List Formatting Tips
+- **Colons after named entities in compressed lists.** When a bullet lists items about a named entity and the list items themselves contain commas, use a colon after the entity name: "Center (Smith and Jones): research, conferences, student fellowships." This avoids ambiguity.
+- **Thematic sub-headings for long bullet lists.** When a document has more than ~10 bullets, group them under bold italic sub-headings to prevent a "laundry list" feel. Sub-headings should be short (3-5 words) and thematic.
+- **Merging status categories.** When a document has both accomplished and pipeline items, consider merging them under thematic headings with pipeline items marked by a leading "(*)" rather than separating into two sections. Add a legend: "Items marked (*) are in development."
 
 Numbered lists: standard Arabic numerals for sequential/ordered items, same indent values.
 
@@ -183,6 +221,8 @@ Voice baseline (tone, banned phrases, preferred expressions) is defined in CLAUD
 - Organized with the most important information first (not buried in conclusions)
 - Bullet lists always introduced by a full sentence
 - No heading styles that feel like PowerPoint slides
+- **Brevity scales with audience knowledge.** When the reader knows the institution, strip explanatory detail. Don't describe what they already know. A donor who sits on the board doesn't need to be told what CTIC is.
+- **AI-researched facts must be verified.** When content originates from web scraping or AI research agents, every factual claim (names, dates, program names, affiliations, statistics) must be verified before inclusion. AI-generated research frequently invents plausible-sounding details.
 
 ---
 
@@ -213,13 +253,127 @@ Voice baseline (tone, banned phrases, preferred expressions) is defined in CLAUD
 
 ## File Production
 
+**Always use python-docx to generate .docx files.** Write a Python script that builds
+the document programmatically. Do NOT write markdown and convert with Pandoc — Pandoc
+produces corrupted OOXML with duplicate style IDs, misnamed image files, and malformed
+relationships that cause Word to refuse to open the file.
+
 1. **Initialize with logo** — load and insert the Penn Carey Law logo as the first element (see Logo section above)
 2. Build the title block appropriate to document type
 3. Apply Cambria 12pt throughout — headings are bold same-size, not larger
-4. Em-dash bullets for unordered lists; Arabic numerals for ordered lists
+4. Bullet character (•) for unordered lists; Arabic numerals for ordered lists
 5. Add footer with page numbers on multi-page documents
 6. Save to `~/Downloads/` (CLI) or `/mnt/user-data/outputs/` (web)
-7. Filename convention: `[DocType]_[Topic]_[YYYY-MM].docx` (e.g., `Proposal_StudentProjects_2025-11.docx`)
+7. **Run the Post-Generation Validation** step (see below) before delivering
+8. Filename convention: `[DocType]_[Topic]_[YYYY-MM].docx` (e.g., `Proposal_StudentProjects_2025-11.docx`)
+
+---
+
+## AI Writing Tell Check
+
+Before delivering any document, scan the full text for these common AI writing patterns. They signal machine-generated prose and undermine credibility. Fix every instance found.
+
+**Filler phrases to cut or replace:**
+- "a wide range of" — replace with "many," "diverse," or just drop it
+- "a variety of" — same treatment
+- "it is important to note that" / "it is worth noting that" — banned; cut entirely
+- "taken together" — AI transition; just start with the conclusion
+- "reflecting the breadth of" — wordy; say it directly
+- "in a structured way" / "in a meaningful way" / "in a comprehensive manner" — filler; cut
+- "the larger point is" — throat-clearing; lead with the point
+
+**Overused words to vary or cut:**
+- "several" — AI defaults to "several" when it doesn't know the count. If it appears more than once in a document, vary with "some," "a few," "a number of," or give the actual number
+- "curated" — AI favorite; usually unnecessary
+- "robust" — banned per CLAUDE.md; be specific about what makes something strong
+- "landscape" — banned per CLAUDE.md
+- "nuanced" — AI filler; say what the nuance actually is
+- "multifaceted" — cut; describe the actual facets instead
+- "leveraging" / "utilizing" — banned; use "using"
+
+**Structural tells:**
+- Identical sentence patterns repeated across consecutive paragraphs or bullets (e.g., every bullet starting with "This program..." or every paragraph opening with "The...")
+- Trailing summary lists that restate what was just said ("spanning X, Y, Z, and W")
+- Overwrought framing where plain language would do ("spans every stage of the J.D. program" vs. "from all three class years")
+- Excessive parallel structure in prose (fine in bullet lists, robotic in paragraphs)
+
+**Em-dash overuse:**
+- More than 1-2 inline em-dashes per page signals AI. Replace most with commas. Keep em-dashes only for strong emphasis or to set off lists that contain commas.
+
+This check applies to all output — documents, memos, emails, and any prose produced on the user's behalf.
+
+**Automated review:** After writing the document file:
+1. If the `factual-reviewer` agent is available, spawn it and pass it the file path. Fix any factual issues it flags.
+2. If the factual reviewer lists claims needing live verification, if the `fact-verifier` agent is available, spawn it with those claims. Correct any contradicted claims; flag unverifiable ones for the user.
+3. If the `voice-style-checker` agent is available, spawn it and pass it the file path. Fix any style issues it flags.
+Complete all steps before delivering to the user.
+
+---
+
+## Post-Generation Validation (Required)
+
+After generating any .docx file, run this validation script to catch structural
+issues that prevent Word from opening the file. This is mandatory — do not skip it.
+
+```python
+import zipfile, re, os
+
+def validate_and_repair_docx(filepath):
+    """Check a .docx for common corruption issues and repair if needed."""
+    repairs = []
+    z = zipfile.ZipFile(filepath, 'r')
+    styles_xml = z.read('word/styles.xml').decode('utf-8')
+
+    # Check 1: Duplicate style IDs (Pandoc artifact — should not happen with
+    # python-docx, but check anyway as a safety net)
+    pattern = r'<w:style\s[^>]*w:styleId="([^"]*)"'
+    style_ids = re.findall(pattern, styles_xml)
+    from collections import Counter
+    dupes = {k: v for k, v in Counter(style_ids).items() if v > 1}
+    if dupes:
+        repairs.append(f"Duplicate style IDs found: {list(dupes.keys())}")
+        # Remove duplicates via regex on raw XML (preserves exact structure)
+        seen = set()
+        full_pattern = r'(<w:style\s[^>]*w:styleId="([^"]*)"[^>]*>.*?</w:style>)'
+        def dedup(m):
+            sid = m.group(2)
+            if sid in seen:
+                return ''
+            seen.add(sid)
+            return m.group(1)
+        styles_xml = re.sub(full_pattern, dedup, styles_xml, flags=re.DOTALL)
+        styles_xml = re.sub(r'\n\s*\n', '\n', styles_xml)
+
+    # Check 2: Images named after relationship IDs (another Pandoc artifact)
+    bad_images = [n for n in z.namelist()
+                  if n.startswith('word/media/rId') and n.endswith('.png')]
+    if bad_images:
+        repairs.append(f"Images with rId names found: {bad_images}")
+
+    if repairs:
+        # Rewrite the file with fixes
+        tmp = filepath + '.tmp'
+        z_out = zipfile.ZipFile(tmp, 'w', zipfile.ZIP_DEFLATED)
+        for item in z.infolist():
+            if item.filename == 'word/styles.xml':
+                z_out.writestr(item, styles_xml.encode('utf-8'))
+            else:
+                z_out.writestr(item, z.read(item.filename))
+        z_out.close()
+        z.close()
+        os.replace(tmp, filepath)
+        print(f"REPAIRED {filepath}: {'; '.join(repairs)}")
+    else:
+        z.close()
+        print(f"VALID: {filepath}")
+
+validate_and_repair_docx("path/to/output.docx")
+```
+
+If validation reports any repairs, that means the generation method produced a
+corrupted file. **Switch to python-docx and regenerate** — do not rely on the
+repair as the primary fix. The repair is a safety net, not a substitute for
+correct generation.
 
 ---
 
@@ -230,8 +384,10 @@ Voice baseline (tone, banned phrases, preferred expressions) is defined in CLAUD
 - [ ] Title block present and appropriate to document type
 - [ ] Section headings: bold, 12pt, `w:before="200" w:after="80"`
 - [ ] Body paragraphs: `w:line="276" w:after="160"`
-- [ ] Em-dash bullets with hanging indent; lists introduced by full sentences
+- [ ] Bullet character (•) with hanging indent; lists introduced by full sentences
+- [ ] Tables: `prevent_table_split()` called on every table (no page breaks mid-table)
 - [ ] Tone follows CLAUDE.md voice baseline (direct, active, no filler)
+- [ ] AI writing tell check passed (see section above)
 - [ ] Closes with concrete next steps or recommendations
 - [ ] Footer present on multi-page documents (centered, Cambria 10pt italic, "Page x of y.")
 - [ ] Saved and presented to user
