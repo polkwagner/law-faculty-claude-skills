@@ -1,4 +1,4 @@
-#!/usr/bin/env python3
+#!/opt/homebrew/bin/python3
 """Publish skills from working installation to public repo.
 
 Copies included skills, applies privacy scrub rules, renames directories and files.
